@@ -1,19 +1,13 @@
 import json
 import multiprocessing
 
-from cli import anchors, store
+from core import store
 
 
 def _write_notes(args):
     path, worker = args
     for number in range(200):
         store.append(path, f"{worker}:{number}:{'x' * 500}\n")
-
-
-def _write_prompts(args):
-    session, worker = args
-    for number in range(50):
-        anchors.record_prompt(session, f"{worker}-{number}")
 
 
 def _bump(path):
@@ -42,14 +36,6 @@ def test_lock_serialises_read_modify_write(puck_home, tmp_path):
     assert json.loads(path.read_text())["n"] == 300
 
 
-def test_sessions_keep_separate_checkpoints(puck_home):
-    with multiprocessing.Pool(4) as pool:
-        pool.map(_write_prompts, [("session-a", 1), ("session-b", 2)])
-    first = anchors.checkpoint_path("session-a").read_text()
-    second = anchors.checkpoint_path("session-b").read_text()
-    assert "2-0" not in first and "1-0" not in second
-
-
-def test_session_ids_cannot_escape_state(puck_home):
-    path = anchors.checkpoint_path("../../etc/passwd")
-    assert path.parent == store.state_dir() / "checkpoints"
+def test_ids_cannot_escape_their_folder():
+    assert "/" not in store.safe_id("../../etc/passwd")
+    assert not store.safe_id("../x").startswith(".")

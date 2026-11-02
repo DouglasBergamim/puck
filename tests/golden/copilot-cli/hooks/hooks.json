@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "puck hook resume --event session-start --host copilot-cli",
+        "timeoutSec": 2
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "puck hook close-guard --event stop --host copilot-cli",
+        "timeoutSec": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "puck",
+  "version": "0.1.0",
+  "description": "A layer in front of any agent harness that optimises LLM context and improves its tools"
+}

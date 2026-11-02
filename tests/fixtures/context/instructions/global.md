@@ -1,0 +1,3 @@
+# Rules
+
+- A sample rule.

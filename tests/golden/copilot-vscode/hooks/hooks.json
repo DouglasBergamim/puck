@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "bash": "puck hook resume --event session-start --host copilot-vscode",
+        "timeoutSec": 2
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "bash": "puck hook close-guard --event stop --host copilot-vscode",
+        "timeoutSec": 2
+      }
+    ]
+  }
+}

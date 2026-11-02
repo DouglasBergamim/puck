@@ -1,11 +1,11 @@
 import json
-import os
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
 
-from cli import context, hooks, scratch, skills, store, tasks
+from core import context, paths, scratch, skills, store, tasks
 from tests.test_hooks import call
 from tests.test_build_and_lint import template, add_skill
 
@@ -32,11 +32,11 @@ def test_start_creates_task_excluded_from_git(puck_home, repo):
                           text=True).stdout == ""
 
 
-def test_non_project_task_lives_in_puck_home(puck_home, tmp_path):
+def test_non_project_task_lives_in_state(puck_home, tmp_path):
     outside = tmp_path / "plain"
     outside.mkdir()
     task = tasks.start("study graphs", "learn", outside)
-    assert task["folder"].startswith(str(puck_home / "tasks"))
+    assert task["folder"].startswith(str(store.state_dir() / "tasks"))
 
 
 def test_same_goal_gets_unique_ids(puck_home, repo):
@@ -82,7 +82,7 @@ def test_no_findings_closes_with_one_line_retro(puck_home, repo):
     task = tasks.start("x", "build", repo)
     archive = tasks.close(task["id"], "partial")
     assert "No findings" in archive.read_text()
-    assert archive.parent == puck_home / "tasks" / "retros"
+    assert archive.parent == paths.retros()
 
 
 def test_ambiguous_task_asks_for_id(puck_home, repo):
@@ -92,36 +92,25 @@ def test_ambiguous_task_asks_for_id(puck_home, repo):
         tasks.resolve(None, repo)
 
 
-def test_session_binds_from_start_output_and_stays_separate(puck_home, repo):
-    first = tasks.start("one", "build", repo)
-    second = tasks.start("two", "build", repo)
-    for session, task in (("a", first), ("b", second)):
-        call("anchors", "post-tool", "claude", {
-            "session_id": session, "tool_name": "Bash", "tool_input": {"command": "puck task start x"},
-            "tool_response": {"stdout": f"{tasks.MARKER} {task['id']}"}})
-    assert store.read_json(store.state_dir() / "sessions/a.json")["task"] == first["id"]
-    assert store.read_json(store.state_dir() / "sessions/b.json")["task"] == second["id"]
-    assert tasks.load(first["id"])["sessions"] == ["a"]
+def test_worktree_plan_beats_its_repo(puck_home, repo):
+    main = tasks.start("main work", "build", repo)
+    side = tasks.start("side work", "build", repo, worktree=True)
+    assert [t["id"] for t in tasks.open_for(repo)] == [main["id"]]
+    assert [t["id"] for t in tasks.open_for(Path(side["cwd"]))] == [side["id"]]
 
 
-def test_marker_in_other_output_does_not_bind(puck_home, repo):
+def test_checklist_shows_done_and_not_done(puck_home, repo):
     task = tasks.start("x", "build", repo)
-    call("anchors", "post-tool", "claude", {
-        "session_id": "s", "tool_name": "Read", "tool_input": {"file_path": "/a.md"},
-        "tool_response": f"{tasks.MARKER} {task['id']}"})
-    assert store.read_json(store.state_dir() / "sessions/s.json")["task"] is None
-
-
-def bind(session, task, host="claude"):
-    payload = {"session_id": session, "tool_name": "Bash", "tool_input": {"command": "puck task start x"},
-               "tool_response": {"stdout": f"{tasks.MARKER} {task['id']}"}}
-    call("anchors", "post-tool", host, payload)
+    tasks.add_step(task["id"], "first", "true")
+    tasks.add_step(task["id"], "second", "false")
+    tasks.run_check(task["id"], "s1")
+    text = tasks.checklist(tasks.load(task["id"]))
+    assert "1/2 done" in text and "[x] s1 first" in text and "[ ] s2 second" in text
 
 
 def test_close_guard_blocks_once_only_when_checks_pass(puck_home, repo):
     task = tasks.start("x", "build", repo)
-    bind("s", task)
-    stop = {"session_id": "s", "stop_hook_active": False}
+    stop = {"cwd": str(repo), "stop_hook_active": False}
     assert call("close-guard", "stop", "claude", stop) is None
     tasks.add_step(task["id"], "ok", "true")
     assert call("close-guard", "stop", "claude", stop) is None
@@ -131,31 +120,27 @@ def test_close_guard_blocks_once_only_when_checks_pass(puck_home, repo):
 
 
 def test_close_guard_ignores_ordinary_chats_and_active_stop(puck_home, repo):
-    assert call("close-guard", "stop", "claude", {"session_id": "chat"}) is None
+    assert call("close-guard", "stop", "claude", {"cwd": str(repo)}) is None
     task = tasks.start("x", "build", repo)
-    bind("s", task)
     tasks.add_step(task["id"], "ok", "true")
     tasks.run_check(task["id"], "s1")
-    assert call("close-guard", "stop", "claude", {"session_id": "s", "stop_hook_active": True}) is None
+    assert call("close-guard", "stop", "claude", {"cwd": str(repo), "stop_hook_active": True}) is None
 
 
 def test_close_guard_blocks_for_copilot(puck_home, repo):
     task = tasks.start("x", "build", repo)
-    call("anchors", "post-tool", "copilot-cli", {
-        "sessionId": "c", "toolName": "bash", "toolArgs": "puck task start x",
-        "toolResult": {"textResultForLlm": f"{tasks.MARKER} {task['id']}"}})
     tasks.add_step(task["id"], "ok", "true")
     tasks.run_check(task["id"], "s1")
-    output = call("close-guard", "stop", "copilot-cli", {"sessionId": "c"})
+    output = call("close-guard", "stop", "copilot-cli", {"cwd": str(repo)})
     assert output["decision"] == "block" and "reason" in output
 
 
 def test_pack_is_capped_paths_only_and_ranked(puck_home):
     add_skill(puck_home, "login-debug", template("login-debug").replace("status: draft", "status: active")
               .replace("What it does.", "Debug login failures."))
-    (puck_home / "tasks" / "retros").mkdir(parents=True)
+    paths.retros().mkdir(parents=True)
     for number in range(100):
-        (puck_home / "tasks/retros" / f"login-{number}.md").write_text("# Login retro\n\nFixed a login thing\n")
+        (paths.retros() / f"login-{number}.md").write_text("# Login retro\n\nFixed a login thing\n")
     text = context.pack("fix the login bug")
     assert len(text) <= context.PACK_LIMIT
     assert "login-debug" in text and "[retro]" in text
@@ -182,7 +167,6 @@ def test_scratch_numbers_experiments_and_gc_keeps_recent(puck_home, repo):
 
 
 def test_new_skill_is_a_draft_and_refuses_duplicates(puck_home):
-    (puck_home / "templates").exists()
     path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
     assert "status: draft" in (path / "SKILL.md").read_text()
     with pytest.raises(tasks.TaskError, match="skill-patch"):
@@ -197,19 +181,19 @@ def test_parallel_proposals_stay_separate(puck_home):
 def test_instruction_proposal_respects_budget(puck_home):
     good = skills.propose("instruction", "t", "global", "Short rule", "- Short rule.")
     skills.resolve(good.stem, approve=True)
-    assert "Short rule" in (puck_home / "instructions/global.md").read_text()
-    assert not good.exists() and (puck_home / "proposals/done" / good.name).exists()
+    assert "Short rule" in paths.instructions().read_text()
+    assert not good.exists() and (paths.proposals() / "done" / good.name).exists()
     bad = skills.propose("instruction", "t", "global", "Huge", "x" * 7000)
     with pytest.raises(tasks.TaskError, match="Over budget"):
         skills.resolve(bad.stem, approve=True)
-    assert bad.exists() and "xxxx" not in (puck_home / "instructions/global.md").read_text()
+    assert bad.exists() and "xxxx" not in paths.instructions().read_text()
 
 
 def test_reject_changes_nothing(puck_home):
-    before = (puck_home / "instructions/global.md").read_text()
+    before = paths.instructions().read_text()
     proposal = skills.propose("instruction", "t", "global", "No", "- No.")
     skills.resolve(proposal.stem, approve=False)
-    assert (puck_home / "instructions/global.md").read_text() == before
+    assert paths.instructions().read_text() == before
 
 
 def test_promote_activates_commits_and_reverts_cleanly(puck_home):
@@ -225,7 +209,7 @@ def test_promote_activates_commits_and_reverts_cleanly(puck_home):
     assert (puck_home / "dist/claude/skills/deploy-steps/SKILL.md").exists()
     assert (puck_home / "dist/claude/evals/deploy-steps-triggers/prompt.md").exists()
     git(puck_home, "revert", "--no-edit", "HEAD")
-    from cli import build
+    from core import build
     build.build_all(puck_home)
     assert not (puck_home / "dist/claude/skills/deploy-steps").exists()
 

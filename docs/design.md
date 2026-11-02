@@ -10,7 +10,9 @@ You use it for two jobs: learning topics you care about (search plus good learni
 
 **What that gives up:** Puck doesn't own the agent loop, system prompt, prompt caching or compaction. It can only influence them through hooks, and how much varies by host. Exact behaviour across hosts is not a goal.
 
-**Decision: no model proxy yet.** Extension points can add context and tools, but can't trim what the harness already sends. Only a proxy on model traffic can do that, at the cost of API-key-only use. Puck builds on extension points first and records context use from milestone 2 (`puck metrics`). A proxy gets added only if those numbers justify it.
+**Decision: no model proxy yet.** Extension points can add context and tools, but can't trim what the harness already sends. Only a proxy on model traffic can do that, at the cost of API-key-only use. Puck builds on extension points first. If the question comes back, context use can be measured from host transcripts, and a proxy gets added only if those numbers justify it.
+
+**Decision: history belongs to the host.** Puck keeps no session records, checkpoints or metrics. It tracks what each plan holds and what is done or not, and hooks restore that plan from the working directory. After compaction, exact paths and errors depend on the host's summary: one benchmark found summaries kept 16% of recurring details against 79% for mechanical anchors, so anchors may need to return if plans keep losing detail.
 
 ## Research findings that drive the design
 
@@ -19,7 +21,7 @@ Evidence quality varies. Much of it is preprints, vendor reports or small sample
 | Finding | Design consequence |
 |---|---|
 | No open harness in an 11-system source study retrieves code with embeddings (Barbaste 2026) | Start with grep; no vector database |
-| Summaries kept 16% of recurring details, mechanical anchors 79% (Compact-Bench, Oct 2026) | Capture anchors ourselves |
+| Summaries kept 16% of recurring details, mechanical anchors 79% (Compact-Bench, Oct 2026) | Keep the plan on disk and restore it; anchors were built and removed to leave history to the host |
 | Models under-use optional retrieval (Vercel: skills uninvoked in 56% of cases; Fan: recall tool unused in 36 of 64 settings) | Critical context is injected or in instruction files, not left to the model to fetch |
 | Generated AGENTS.md files lowered success and raised cost 20%+ (Gloaguen) | Hand-written, under 100 lines, non-obvious facts only |
 | Iterated LLM memory updates "round off" facts (secondhand) | Standing-context changes must be reviewable diffs |
@@ -41,13 +43,14 @@ Solid lines are build and runtime paths. Dotted lines are the capture loop.
 flowchart TB
     you(["You"])
 
-    subgraph behaviour["Behaviour: built and installed"]
+    subgraph behaviour["context/ behaviour: built and installed"]
         instructions["instructions/"]
         skills["skills/"]
         agents["agents/"]
-        hooks["hooks/policy.yaml"]
-        hostcfg["hosts/"]
+        hooks["hooks.yaml"]
     end
+
+    adapters["src/adapters/: deterministic transforms"]
 
     build["puck build"]
     dist["dist/ per-host packages"]
@@ -66,23 +69,24 @@ flowchart TB
         start --> work --> verify --> retro
     end
 
-    cli["puck CLI: cli/"]
+    cli["puck CLI: src/core and src/cli"]
 
     subgraph project["Each project: .puck/ excluded from git"]
         taskfiles["SPEC, progress, findings"]
         scratch["scratch/ disposable"]
     end
 
-    subgraph data["Your data: read on demand"]
+    subgraph data["context/ data: read on demand"]
         knowledge["knowledge/ study material"]
         profile["profile.md"]
         proposals["proposals/ waiting for your OK"]
-        retros["tasks/ past retros"]
+        retros["context/tasks/ past retros"]
     end
 
-    state["state/ checkpoints, gitignored"]
+    state["state/ task registry, gitignored"]
 
     behaviour --> build
+    adapters --> build
     build --> dist
     dist --> hostlayer
     you --> hostlayer
@@ -100,8 +104,9 @@ flowchart TB
     you -. "approve" .-> behaviour
 ```
 
-- **Generator:** turns the behaviour folders into per-host packages using a small `HostConfig` per host (frontmatter allowlist, capability-to-tool map, paths, tier), the gstack model. Written in-house, because two hosts don't justify adopting rulesync or dotagents.
-- **Packaging:** a Claude Code plugin is the main target, since it carries skills, agents, hooks and MCP. Milestone 1 tests whether Copilot's legacy `.claude-plugin/plugin.json` support works, which would shrink the generator.
+- **Adapters:** `context/` is the single source of truth. Each harness gets one pure adapter in `src/adapters/` that transforms it at build time and translates hook traffic at run time. Adapters use no files, network, clock, environment or LLM, so the same input gives byte-identical output. `src/core` knows no harness by name, and adding a harness needs no core change.
+- **Generic harness:** the `Adapter` base class emits `AGENTS.md` plus `.agents/skills/`, so any harness reading those gets Content tier with no new code.
+- **Packaging:** a Claude Code plugin is the primary target, since it carries skills, agents, hooks and MCP. Copilot uses its legacy plugin format.
 - **Core and CLI:** one Python library. Hooks and skills call the CLI, which needs no extra host support. A thin stdio MCP server arrives only when a model-facing tool is needed. It will use explicit parameters and no Sampling, Roots or server-initiated requests.
 
 **Language: Python with uv.** It's the most used language in your projects, the MCP SDK is Tier 1, py-fsrs exists, and uv is installed.
@@ -119,46 +124,31 @@ flowchart TB
 
 ```
 puck/
-  AGENTS.md
-  pyproject.toml
-
-  # Behaviour: built and installed into hosts
-  instructions/global.md
-  skills/{task,plan,review,research,kb,learn}/
-  agents/{researcher,claim-checker,reviewer,retro}.md
-  hooks/policy.yaml
-  hosts/{claude,copilot-cli,copilot-vscode}.yaml
-  hosts/refs/*-tools.md
-  templates/          # skill, agent, SPEC, retro templates
-
-  # Code: the puck CLI
-  cli/
-    main.py  hooks.py  build.py  lint.py
-    tasks.py  context.py  skills.py  anchors.py  scratch.py  kb.py  learn.py
-
-  # Your data: never installed, read on demand
-  knowledge/          # study material: raw/, wiki/, cards, index.md, log.md; created in milestone 3
-  profile.md          # hand-written, capped
-  proposals/          # changes waiting for your OK
-  tasks/              # non-project tasks, and every finished task's retro
-
-  # Generated or local: gitignored
-  state/              # checkpoints
-  dist/               # per-host packages
-
-  tests/
-  docs/research/      # the research reports
+  AGENTS.md  README.md  pyproject.toml
+  docs/        # design, spikes, research; never read by the runtime
+  src/
+    core/      # harness-neutral: model, paths, tasks, context, hooks, build, lint
+    adapters/  # one pure transform per harness; base.py is the generic harness
+    cli/       # the puck command
+  context/     # the source of truth for everything the LLM sees
+    instructions/  skills/  agents/  hooks.yaml  templates/  profile.md
+    knowledge/     # study material, created in milestone 3
+    tasks/         # past retros
+    proposals/     # changes waiting for your OK
+  tests/       # including fixtures/ and golden/
+  dist/        # generated, gitignored
+  state/       # task registry and locks, gitignored
 ```
 
-**Behaviour and data stay separate.** Behaviour changes how the agent acts in every session, so it's linted, evaluated and gated. Data only informs a task when it's read, so wiki pages can land automatically.
+`context/` holds behaviour and data side by side. Behaviour (`instructions/`, `skills/`, `agents/`, `hooks.yaml`, `profile.md`) is built into `dist/`, and it's linted, evaluated and gated. Data only informs a task when it's read, so wiki pages can land automatically.
 
 **`knowledge/` holds study material only:** sources, wiki notes and flashcards for topics you're learning. It can be opened as an Obsidian vault. Facts tied to a procedure live in that skill's `references/`, so they load with the skill and stay out of the skill listing.
 
-`cli/` is the only Python folder, so there's no `src/` nesting. `pyproject.toml` exposes it through `puck = "cli.main:main"`, and `uv tool install --editable .` puts `puck` on your PATH.
+`src/core`, `src/adapters` and `src/cli` are three top-level Python packages, and `uv tool install --editable .` puts `puck` on your PATH.
 
-**Everything personal lives in this one repo.** The installer sets `PUCK_HOME` to it, so hooks and skills can find it from any project. Your existing vault at `~/Documents/StudyNotes/TheTruth` is left untouched, and notes can be imported later. The repo stays local by default, and any remote must be private.
+**Everything personal lives in this one repo.** `PUCK_HOME` can point elsewhere, and otherwise Puck finds the repo from its own source path. Your existing vault at `~/Documents/StudyNotes/TheTruth` is left untouched, and notes can be imported later. The repo stays local by default, and any remote must be private.
 
-Active work in a code project lives in `<project>/.puck/`, which is added to `.git/info/exclude`, so it never touches the project's commits or `.gitignore`. Keeping it inside the project means scratch code can import project modules and writes stay inside the host's working directory. The finished retro is copied to `tasks/`, so past tasks stay searchable across projects.
+Active work in a code project lives in `<project>/.puck/`, which is added to `.git/info/exclude`, so it never touches the project's commits or `.gitignore`. Keeping it inside the project means scratch code can import project modules and writes stay inside the host's working directory. Tasks outside a git repository live in `state/tasks/`. The finished retro is copied to `context/tasks/`, so past tasks stay searchable across projects.
 
 ## Execution flow
 
@@ -199,16 +189,16 @@ Puck supports parallelism at two levels. The host runs the agents, and Puck keep
 | Several tasks at once | Auth fix in one terminal, a study session in another, on any mix of hosts | You open each session | Each coding task gets its own git worktree |
 
 **Sessions and tasks**
-- There's no global "active task". `state/sessions/<session-id>.json` binds each session to its task, so hooks, checkpoints and `close-guard` only touch that session's work.
+- There's no global "active task". Hooks and commands find a plan from the working directory, so each worktree sees only its own.
 - `puck task start --worktree` creates a branch and worktree for the task, and you open a session there. Tasks on separate topics or read-only work don't need one.
-- `puck task list` shows every open task with its host, session, worktree and step status.
+- `puck task list` shows every open task with its worktree and step status.
 - Each task runs its own retro and raises its own proposals. Puck never merges branches; merging stays your decision.
 
 **Shared files**
 - `PUCK_HOME` can receive writes from several sessions, and all of them go through the CLI, which takes a file lock.
 - Proposals, retros and drafts are one file each with unique names, so they can't overwrite each other.
 - A change to an existing skill is stored as a patch in `proposals/`, never written straight into `skills/`. Two tasks can both suggest changes, and the second one surfaces any conflict at review.
-- Appends to `findings.md`, `LOG.md`, checkpoints and `log.md` are locked, because subagent hooks can fire at the same time. `index.md` is regenerated rather than edited.
+- Appends to `findings.md`, `LOG.md` and `log.md` are locked, because workers can write at the same time. `index.md` is regenerated rather than edited.
 - Git commits in this repo are serialised by the same lock.
 
 **Limits:** fan-out defaults to at most 5 workers per task, because each one costs about as much as a full agent. Worker counts are capped in the skill, and nested fan-out is not used.
@@ -237,7 +227,7 @@ Slash commands are not a separate primitive. A skill with `invocation: user` cov
 
 ### Instruction doc
 
-Sources are `instructions/global.md` (all work) and each project's AGENTS.md. Generated into each host's user-level instruction file.
+Sources are `context/instructions/global.md` (all work) and each project's AGENTS.md. Plugin harnesses get the rules from the session-start hook, and the generic harness gets `AGENTS.md`.
 
 - Under 100 lines and within the always-on budget, with the task and retro rule at the top.
 - Hand-written, or changed only through an approved proposal.
@@ -253,7 +243,7 @@ skills/<name>/
   references/     # read only when SKILL.md says so; one level deep
   scripts/        # deterministic helpers
   assets/         # templates
-  evals.yaml      # moved to the eval location by build; never installed
+  evals/          # eval cases, moved by the adapter; never installed
 ```
 
 ```markdown
@@ -283,7 +273,7 @@ metadata:
 ...
 
 ## Host differences
-Read references/<host>-tools.md if a named capability is unclear.
+Read references/host-tools.md if a named capability is unclear.
 ```
 
 - `description` says what it does, when to use it and when not to. It's the only part loaded on every turn, so it's written for matching and kept under 1,024 characters.
@@ -340,26 +330,24 @@ At most 1,500 tokens in this exact format, with details in a file:
 
 ### Hook
 
-Canonical definitions live in `hooks/policy.yaml`:
+Canonical definitions live in `context/hooks.yaml`. A hook runs on any adapter that has its event:
 
 ```yaml
 - id: close-guard
-  event: stop               # session-start | prompt | post-tool | pre-compact | stop
+  event: stop               # session-start | stop
   run: puck hook close-guard
   mode: block               # observe | inject | block
   timeout_ms: 2000
   on_failure: open
-  hosts: [claude, copilot-cli]
 ```
 
 Each host shim converts its payload to one normalised event on stdin, and maps the result back:
 
 ```json
-{"event": "post-tool", "host": "claude", "session_id": "...", "cwd": "...",
- "tool": {"name": "shell", "input": {}, "output_path": "..."}, "prompt": null, "source": null}
+{"event": "stop", "host": "claude", "cwd": "...", "already_forced": false}
 ```
 ```json
-{"context": null, "decision": "none", "reason": null}
+{"context": null, "decision": null, "reason": null}
 ```
 
 Rules:
@@ -373,13 +361,10 @@ Rules:
 
 | Hook | Event | Does | Claude Code | Copilot |
 |---|---|---|---|---|
-| `resume` | session-start, including after compaction | Injects task pointer and checkpoint | Yes | Start only; post-compact is a spike |
-| `pack` | prompt | Records the prompt; injects the pending pack | Yes | Records only, because output is dropped |
-| `anchors` | post-tool | Appends paths, SHAs, errors, URLs | Yes | Yes |
-| `compact-mark` | pre-compact | Flushes anchors and writes a marker | Yes | Yes |
-| `close-guard` | stop | Open task with unprocessed findings: blocks once, asking the agent to verify and run the retro | Yes | Spike; otherwise the rule alone |
+| `resume` | session-start, including after compaction | Injects the always-on rules and the checklist of any open plan for this directory | Yes | Session start only; Copilot has no post-compact event |
+| `close-guard` | stop | Open task with all checks passing: blocks once, asking the agent to run the retro and close | Yes | Documented, untested |
 
-`close-guard` stores one attempt per task, so it can't loop, and ordinary chats with no open task are unaffected.
+`close-guard` records one nudge per task, so it can't loop, and ordinary chats with no open task are unaffected.
 
 ### CLI commands
 
@@ -398,7 +383,7 @@ The CLI is the tool surface for skills, hooks and agents. Commands take the form
   SPEC.md          # goal, decisions, non-goals, acceptance checks
   progress.json    # machine-updated step state
   findings.md      # appended by puck note
-  retro.md         # written at close, copied to $PUCK_HOME/tasks/
+  retro.md         # written at close, copied to context/tasks/
   scratch/         # disposable, see below
 ```
 
@@ -416,7 +401,7 @@ Findings use one line each, and the type sets the destination:
 - [procedure] Run migrations before seeding (source: scripts/seed.py:12)
 ```
 
-Types are `procedure`, `topic`, `project`, `rule` and `one-off`. Checkpoints live in `state/<session-id>.md`, because they hold raw prompts and belong to a session rather than a task.
+Types are `procedure`, `topic`, `project`, `rule` and `one-off`. `puck task show` prints the plan as a checklist of what's done and what isn't.
 
 ### Scratch space
 
@@ -454,17 +439,17 @@ The host owns the window. We own what enters it and what survives it.
 | Tier | Contents | Budget | Loaded by |
 |---|---|---|---|
 | Host-owned | Prefix, caching, compaction | Not ours | Host |
-| Always-on | Hand-written rules and `profile.md` | About 6,000 characters | **Host instruction files**, so they work on every tier and survive compaction |
+| Always-on | Hand-written rules and `profile.md` | About 6,000 characters | `resume` hook, because plugins can't carry instruction files; `AGENTS.md` on the generic harness |
 | Listings | Skill and agent descriptions | Under 1,024 characters each; total tracked by lint | Host |
-| Injected | Task pack, task pointer, latest checkpoint | Any single hook payload under 10,000 characters | Hooks |
+| Injected | Open plan checklist | Any single hook payload under 10,000 characters | Hooks |
 | On-demand | Skill bodies, references, wiki pages | Each read bounded | Skills, `puck kb` |
 | Task state | SPEC.md, progress.json, findings, scratch log | Pointer only until needed | Files |
 | Archive | Host transcripts, raw sources, past retros | Never loaded whole | Searched on request |
 
-1. **Anchors build up incrementally.** Prompt and post-tool hooks append file paths, SHAs, errors, URLs and verbatim user messages to a checkpoint. This avoids per-host transcript parsers and transcript lag.
-2. **Checkpoints are keyed by session,** so parallel sessions don't overwrite each other. Learning sessions record attempts and misconceptions as well as code anchors.
-3. **Compaction survival differs by host.** Claude Code re-injects through compact `SessionStart`. The 10,000-character limit is a hard design limit, because above it Claude gets only a path and a preview. On Copilot, milestone 1 tests a workaround: `preCompact` writes a marker and the next `postToolUse` injects the checkpoint. If that fails, Copilot stays Partial, and new sessions resume from task files.
-4. **Progress lives on disk.** New sessions start from task files, not from a summary.
+1. **The plan lives on disk.** New sessions and compacted sessions start from the task folder, not from a summary.
+2. **The harness keeps the history.** Transcripts, compaction and session records are the harness's job.
+3. **Restoring the plan differs by host.** Claude Code gets the checklist back through compact `SessionStart`. Copilot has no post-compact event, so it relies on the always-on rule to run `puck task show`.
+4. **Parallel plans stay apart by directory.** Hooks use the nearest open plan to the working directory, so a worktree's plan beats its repository's. Two plans in one directory are both shown.
 5. **No custom memory system at first.** Claude Code's auto memory stays on. It's unreviewed and Claude-only, which is why the cross-host version is planned for phase 2. That step needs `autoMemoryEnabled: false`, a global setting, so you decide then.
 6. **Retrieval has a measured upgrade path:** ripgrep, then SQLite FTS5, then qmd, each only when a labelled set of about 30 queries shows misses.
 
@@ -535,12 +520,12 @@ Evals run from the first skill. **Stop and reassess after milestone 3.**
 
 The research came from documents, and the design review checked host behaviour against docs and `--help` only. Nothing has run on a host yet, and the format details here are unbuilt proposals, so milestone 1 is where these assumptions get tested.
 
-- **Unit tests:** `uv run pytest` covering anchors, session keying, task pack ranking and cap, event normalisation per host, close-guard's one-attempt limit, scratch cleanup, FSRS scheduling and generator output.
-- **Concurrency test:** many processes write notes, anchors and proposals at once, with nothing lost or corrupted, and two sessions never see each other's task or checkpoint.
+- **Unit tests:** `uv run pytest` covering plan lookup by directory, task pack ranking and cap, event normalisation per host, close-guard's one-attempt limit, scratch cleanup, FSRS scheduling and generator output.
+- **Concurrency test:** many processes write notes and proposals at once, with nothing lost or corrupted.
 - **`puck lint`:** validates every skill, agent, hook and instruction doc, and fails on a host tool name in skill text.
 - **Budget test:** fails if always-on content or any single hook payload passes its limit.
 - **End-to-end flow:** start a task from a code project outside this repo, confirm the pack lists relevant context, run an experiment in scratch, finish the task, and confirm the retro runs unprompted, proposals appear once, and an approved skill loads in a new session on another host. Reverting that commit and rebuilding must remove it.
-- **Portability:** the same prompt on each host must show the injected pointer and run `puck status`, in Copilot CLI and VS Code separately.
+- **Portability:** the same prompt on each host must show the injected plan and run `puck task show`, in Copilot CLI and VS Code separately.
 - **Compaction continuation:** run a real task, force `/compact`, confirm the task continues correctly. This tests continuation, not summary quality.
 - **Skills:** `claude plugin eval` (available in the installed v2.1.316) with `--runs 1` while drafting and three runs for a decision. Cases are 5-10 real tasks, including a should-not-trigger case. It mocks MCP by default, so test real tool calls separately.
 - **Learning outcome:** paired topics, one with the skill and one without, with an unaided quiz at 7 and 30 days.

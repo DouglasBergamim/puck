@@ -1,0 +1,27 @@
+{
+  "description": "Puck session hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "puck hook resume --event session-start --host claude",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "puck hook close-guard --event stop --host claude",
+            "timeout": 2
+          }
+        ]
+      }
+    ]
+  }
+}
