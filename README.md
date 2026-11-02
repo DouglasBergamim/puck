@@ -1,6 +1,13 @@
 # Puck
 
-Puck is a layer in front of any agent harness. It optimises the context an LLM gets and improves its tools. It keeps each plan on disk with what is done and what is not, verifies the work with real checks, and turns what a task taught into reusable skills. History stays with the host.
+<p align="center">
+  <img src="assets/739698be1b8d184623ba906e941bfa84.jpg" alt="Puck" width="180">
+</p>
+
+> **Hi! I'm Puck.**
+>
+> Puck is my personal coding companion, inspired by the tiny elf from Berserk. It may not be able to heal your wounds or defeat demons, but it can help organize your context, guide your tools, and make your development workflow feel a little less like surviving the Eclipse.
+
 
 ## Layout
 
