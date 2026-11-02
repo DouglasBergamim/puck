@@ -12,6 +12,7 @@ A layer in front of any agent harness that optimises the context an LLM gets and
 ## Rules
 
 - `context/` is the source of truth for everything the LLM sees. Never edit `dist/` or installed copies.
+- `src/core/` is layered: `common` ← `primitives` ← `tools/work` ← `tools/learning`, with `hooks.py` on top. Never import upwards; `tests/test_layout.py` enforces it.
 - `src/core/` knows no harness by name. Harness differences live only in `src/adapters/`, which stay pure: no files, network, clock, environment or LLM.
 - Skill text names capabilities, not host tool names. `puck lint` enforces this.
 - Hook logic lives in `src/core/hooks.py`. Hooks fail open and stay silent on success.

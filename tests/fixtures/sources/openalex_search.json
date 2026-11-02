@@ -1,0 +1,2279 @@
+{
+ "meta": {
+  "count": 357839,
+  "per_page": 3
+ },
+ "results": [
+  {
+   "id": "https://openalex.org/W3134435812",
+   "doi": "https://doi.org/10.3390/e23030283",
+   "display_name": "Attention Mechanisms and Their Applications to Complex Systems",
+   "publication_year": 2021,
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": null,
+      "display_name": "Adri\u00e1n Hern\u00e1ndez",
+      "orcid": "https://orcid.org/0000-0002-7534-4612",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-7534-4612"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I111262870",
+       "display_name": "Universitat de Miguel Hern\u00e1ndez d'Elx",
+       "ror": "https://ror.org/01azzms13",
+       "country_code": "ES",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I111262870"
+       ]
+      }
+     ],
+     "countries": [
+      "ES"
+     ],
+     "is_corresponding": false,
+     "raw_author_name": "Adri\u00e1n Hern\u00e1ndez",
+     "raw_affiliation_strings": [
+      "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0002-7534-4612",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain",
+       "institution_ids": [
+        "https://openalex.org/I111262870"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "last",
+     "author": {
+      "id": "https://openalex.org/A5091274013",
+      "display_name": "Jos\u00e9 M. Amig\u00f3",
+      "orcid": "https://orcid.org/0000-0002-1642-1171",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-1642-1171"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I111262870",
+       "display_name": "Universitat de Miguel Hern\u00e1ndez d'Elx",
+       "ror": "https://ror.org/01azzms13",
+       "country_code": "ES",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I111262870"
+       ]
+      }
+     ],
+     "countries": [
+      "ES"
+     ],
+     "is_corresponding": true,
+     "raw_author_name": "Jos\u00e9 M. Amig\u00f3",
+     "raw_affiliation_strings": [
+      "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0002-1642-1171",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain",
+       "institution_ids": [
+        "https://openalex.org/I111262870"
+       ]
+      }
+     ]
+    }
+   ],
+   "cited_by_count": 140,
+   "primary_location": {
+    "id": "doi:10.3390/e23030283",
+    "doi": "https://doi.org/10.3390/e23030283",
+    "is_oa": true,
+    "landing_page_url": "https://doi.org/10.3390/e23030283",
+    "pdf_url": "https://www.mdpi.com/1099-4300/23/3/283/pdf?version=1616138122",
+    "source": {
+     "id": "https://openalex.org/S195231649",
+     "display_name": "Entropy",
+     "issn_l": "1099-4300",
+     "issn": [
+      "1099-4300"
+     ],
+     "is_oa": true,
+     "is_in_doaj": true,
+     "is_core": true,
+     "listed_in": [
+      "anvur-class-a",
+      "anvur-scientific",
+      "cwts-core",
+      "doaj",
+      "norway-1",
+      "poland-100",
+      "russia-white-list-2",
+      "vabb-shw"
+     ],
+     "host_organization": "https://openalex.org/P4310310987",
+     "host_organization_name": "Multidisciplinary Digital Publishing Institute",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310310987"
+     ],
+     "host_organization_lineage_names": [
+      "Multidisciplinary Digital Publishing Institute"
+     ],
+     "type": "journal"
+    },
+    "license": "cc-by",
+    "license_id": "https://openalex.org/licenses/cc-by",
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Entropy",
+    "raw_type": "journal-article"
+   },
+   "type": "review",
+   "ids": {
+    "openalex": "https://openalex.org/W3134435812",
+    "doi": "https://doi.org/10.3390/e23030283",
+    "mag": "3134435812",
+    "pmid": "https://pubmed.ncbi.nlm.nih.gov/33652728",
+    "pmcid": "https://www.ncbi.nlm.nih.gov/pmc/articles/7996841"
+   },
+   "referenced_works": [
+    "https://openalex.org/W1524454772",
+    "https://openalex.org/W1547840952",
+    "https://openalex.org/W1793121960",
+    "https://openalex.org/W1802196594",
+    "https://openalex.org/W1944750461",
+    "https://openalex.org/W2005708641",
+    "https://openalex.org/W2053377145",
+    "https://openalex.org/W2063056630",
+    "https://openalex.org/W2064675550",
+    "https://openalex.org/W2101113449",
+    "https://openalex.org/W2130942839",
+    "https://openalex.org/W2133564696",
+    "https://openalex.org/W2138484437",
+    "https://openalex.org/W2155375964",
+    "https://openalex.org/W2157331557",
+    "https://openalex.org/W2165766447",
+    "https://openalex.org/W2410938517",
+    "https://openalex.org/W2530887700",
+    "https://openalex.org/W2613328025",
+    "https://openalex.org/W2626778328",
+    "https://openalex.org/W2735778951",
+    "https://openalex.org/W2738335552",
+    "https://openalex.org/W2745461083",
+    "https://openalex.org/W2766447205",
+    "https://openalex.org/W2767395101",
+    "https://openalex.org/W2786209943",
+    "https://openalex.org/W2796813311",
+    "https://openalex.org/W2887681367",
+    "https://openalex.org/W2888539709",
+    "https://openalex.org/W2891511127",
+    "https://openalex.org/W2901180824",
+    "https://openalex.org/W2903941857",
+    "https://openalex.org/W2905193157",
+    "https://openalex.org/W2914623577",
+    "https://openalex.org/W2919115771",
+    "https://openalex.org/W2948140294",
+    "https://openalex.org/W2950527759",
+    "https://openalex.org/W2950635152",
+    "https://openalex.org/W2951008357",
+    "https://openalex.org/W2963287297",
+    "https://openalex.org/W2963532813",
+    "https://openalex.org/W2964199361",
+    "https://openalex.org/W2986364431",
+    "https://openalex.org/W2987106249",
+    "https://openalex.org/W2988226917",
+    "https://openalex.org/W3016489761",
+    "https://openalex.org/W3030163527",
+    "https://openalex.org/W3104945870",
+    "https://openalex.org/W3112706813"
+   ],
+   "abstract_inverted_index": {
+    "Deep": [
+     0
+    ],
+    "learning": [
+     1
+    ],
+    "models": [
+     2,
+     35
+    ],
+    "and": [
+     3,
+     18,
+     28,
+     50,
+     77,
+     82
+    ],
+    "graphics": [
+     4
+    ],
+    "processing": [
+     5
+    ],
+    "units": [
+     6
+    ],
+    "have": [
+     7,
+     22,
+     57
+    ],
+    "completely": [
+     8
+    ],
+    "transformed": [
+     9
+    ],
+    "the": [
+     10,
+     71,
+     104
+    ],
+    "field": [
+     11
+    ],
+    "of": [
+     12,
+     74,
+     100,
+     106
+    ],
+    "machine": [
+     13,
+     92
+    ],
+    "learning.": [
+     14,
+     93
+    ],
+    "Recurrent": [
+     15
+    ],
+    "neural": [
+     16
+    ],
+    "networks": [
+     17
+    ],
+    "long": [
+     19
+    ],
+    "short-term": [
+     20
+    ],
+    "memories": [
+     21
+    ],
+    "been": [
+     23
+    ],
+    "successfully": [
+     24
+    ],
+    "used": [
+     25
+    ],
+    "to": [
+     26,
+     63
+    ],
+    "model": [
+     27
+    ],
+    "predict": [
+     29
+    ],
+    "complex": [
+     30,
+     107
+    ],
+    "systems.": [
+     31,
+     108
+    ],
+    "However,": [
+     32
+    ],
+    "these": [
+     33,
+     64,
+     101
+    ],
+    "classic": [
+     34
+    ],
+    "do": [
+     36
+    ],
+    "not": [
+     37
+    ],
+    "perform": [
+     38
+    ],
+    "sequential": [
+     39
+    ],
+    "reasoning,": [
+     40
+    ],
+    "a": [
+     41,
+     45,
+     60,
+     88
+    ],
+    "process": [
+     42
+    ],
+    "that": [
+     43
+    ],
+    "guides": [
+     44
+    ],
+    "task": [
+     46
+    ],
+    "based": [
+     47
+    ],
+    "on": [
+     48
+    ],
+    "perception": [
+     49
+    ],
+    "memory.": [
+     51
+    ],
+    "In": [
+     52,
+     66
+    ],
+    "recent": [
+     53
+    ],
+    "years,": [
+     54
+    ],
+    "attention": [
+     55,
+     75,
+     80
+    ],
+    "mechanisms": [
+     56,
+     76
+    ],
+    "emerged": [
+     58
+    ],
+    "as": [
+     59
+    ],
+    "promising": [
+     61
+    ],
+    "solution": [
+     62
+    ],
+    "problems.": [
+     65
+    ],
+    "this": [
+     67
+    ],
+    "review,": [
+     68
+    ],
+    "we": [
+     69,
+     95
+    ],
+    "describe": [
+     70
+    ],
+    "key": [
+     72
+    ],
+    "aspects": [
+     73
+    ],
+    "some": [
+     78,
+     97
+    ],
+    "relevant": [
+     79
+    ],
+    "techniques": [
+     81,
+     102
+    ],
+    "point": [
+     83
+    ],
+    "out": [
+     84
+    ],
+    "why": [
+     85
+    ],
+    "they": [
+     86
+    ],
+    "are": [
+     87
+    ],
+    "remarkable": [
+     89
+    ],
+    "advance": [
+     90
+    ],
+    "in": [
+     91,
+     103
+    ],
+    "Then,": [
+     94
+    ],
+    "illustrate": [
+     96
+    ],
+    "important": [
+     98
+    ],
+    "applications": [
+     99
+    ],
+    "modeling": [
+     105
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W4385201870",
+   "doi": "https://doi.org/10.3390/biology12071033",
+   "display_name": "Transformer Architecture and Attention Mechanisms in Genome Data Analysis: A Comprehensive Review",
+   "publication_year": 2023,
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5061125037",
+      "display_name": "Sanghyuk Roy Choi",
+      "orcid": "https://orcid.org/0000-0001-8316-194X",
+      "observed_orcids": [
+       "https://orcid.org/0000-0001-8316-194X"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I67900169",
+       "display_name": "Chung-Ang University",
+       "ror": "https://ror.org/01r024a98",
+       "country_code": "KR",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I67900169"
+       ]
+      }
+     ],
+     "countries": [
+      "KR"
+     ],
+     "is_corresponding": false,
+     "raw_author_name": "Sanghyuk Roy Choi",
+     "raw_affiliation_strings": [
+      "School of Electrical and Electronics Engineering, Chung-Ang University, Seoul 06974, Republic of Korea"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0001-8316-194X",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "School of Electrical and Electronics Engineering, Chung-Ang University, Seoul 06974, Republic of Korea",
+       "institution_ids": [
+        "https://openalex.org/I67900169"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "last",
+     "author": {
+      "id": "https://openalex.org/A5101544150",
+      "display_name": "Minhyeok Lee",
+      "orcid": "https://orcid.org/0000-0003-2562-172X",
+      "observed_orcids": [
+       "https://orcid.org/0000-0003-2562-172X",
+       "https://orcid.org/0009-0003-2572-3627"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I67900169",
+       "display_name": "Chung-Ang University",
+       "ror": "https://ror.org/01r024a98",
+       "country_code": "KR",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I67900169"
+       ]
+      }
+     ],
+     "countries": [
+      "KR"
+     ],
+     "is_corresponding": true,
+     "raw_author_name": "Minhyeok Lee",
+     "raw_affiliation_strings": [
+      "School of Electrical and Electronics Engineering, Chung-Ang University, Seoul 06974, Republic of Korea"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0003-2562-172X",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "School of Electrical and Electronics Engineering, Chung-Ang University, Seoul 06974, Republic of Korea",
+       "institution_ids": [
+        "https://openalex.org/I67900169"
+       ]
+      }
+     ]
+    }
+   ],
+   "cited_by_count": 240,
+   "primary_location": {
+    "id": "doi:10.3390/biology12071033",
+    "doi": "https://doi.org/10.3390/biology12071033",
+    "is_oa": true,
+    "landing_page_url": "https://doi.org/10.3390/biology12071033",
+    "pdf_url": "https://www.mdpi.com/2079-7737/12/7/1033/pdf?version=1690007847",
+    "source": {
+     "id": "https://openalex.org/S153489431",
+     "display_name": "Biology",
+     "issn_l": "2079-7737",
+     "issn": [
+      "2079-7737"
+     ],
+     "is_oa": true,
+     "is_in_doaj": true,
+     "is_core": true,
+     "listed_in": [
+      "cwts-core",
+      "doaj",
+      "norway-1",
+      "poland-100",
+      "russia-white-list-1",
+      "vabb-shw"
+     ],
+     "host_organization": "https://openalex.org/P4310310987",
+     "host_organization_name": "Multidisciplinary Digital Publishing Institute",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310310987"
+     ],
+     "host_organization_lineage_names": [
+      "Multidisciplinary Digital Publishing Institute"
+     ],
+     "type": "journal"
+    },
+    "license": "cc-by",
+    "license_id": "https://openalex.org/licenses/cc-by",
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Biology",
+    "raw_type": "journal-article"
+   },
+   "type": "review",
+   "ids": {
+    "openalex": "https://openalex.org/W4385201870",
+    "doi": "https://doi.org/10.3390/biology12071033",
+    "pmid": "https://pubmed.ncbi.nlm.nih.gov/37508462",
+    "pmcid": "https://www.ncbi.nlm.nih.gov/pmc/articles/10376273"
+   },
+   "referenced_works": [
+    "https://openalex.org/W2626778328",
+    "https://openalex.org/W2942173509",
+    "https://openalex.org/W2942231644",
+    "https://openalex.org/W2944851425",
+    "https://openalex.org/W2962655813",
+    "https://openalex.org/W2964328732",
+    "https://openalex.org/W2977368063",
+    "https://openalex.org/W2982510384",
+    "https://openalex.org/W3006721660",
+    "https://openalex.org/W3012566059",
+    "https://openalex.org/W3021002099",
+    "https://openalex.org/W3024028653",
+    "https://openalex.org/W3026116033",
+    "https://openalex.org/W3027711990",
+    "https://openalex.org/W3030163527",
+    "https://openalex.org/W3036145600",
+    "https://openalex.org/W3041434156",
+    "https://openalex.org/W3042748728",
+    "https://openalex.org/W3047670845",
+    "https://openalex.org/W3080479355",
+    "https://openalex.org/W3091722278",
+    "https://openalex.org/W3092434764",
+    "https://openalex.org/W3095596981",
+    "https://openalex.org/W3095982413",
+    "https://openalex.org/W3110121217",
+    "https://openalex.org/W3119997354",
+    "https://openalex.org/W3123236124",
+    "https://openalex.org/W3125993166",
+    "https://openalex.org/W3127930610",
+    "https://openalex.org/W3128378288",
+    "https://openalex.org/W3128936881",
+    "https://openalex.org/W3130271948",
+    "https://openalex.org/W3134111154",
+    "https://openalex.org/W3134782704",
+    "https://openalex.org/W3136078519",
+    "https://openalex.org/W3138516171",
+    "https://openalex.org/W3146366485",
+    "https://openalex.org/W3151623506",
+    "https://openalex.org/W3152443338",
+    "https://openalex.org/W3157449380",
+    "https://openalex.org/W3158694006",
+    "https://openalex.org/W3160425403",
+    "https://openalex.org/W3160976461",
+    "https://openalex.org/W3174413331",
+    "https://openalex.org/W3174855653",
+    "https://openalex.org/W3176308329",
+    "https://openalex.org/W3179195447",
+    "https://openalex.org/W3180669414",
+    "https://openalex.org/W3181448263",
+    "https://openalex.org/W3183966140",
+    "https://openalex.org/W3185225911",
+    "https://openalex.org/W3187418919",
+    "https://openalex.org/W3187970204",
+    "https://openalex.org/W3193719766",
+    "https://openalex.org/W3194055104",
+    "https://openalex.org/W3198655865",
+    "https://openalex.org/W3198707249",
+    "https://openalex.org/W3200616132",
+    "https://openalex.org/W3200916343",
+    "https://openalex.org/W3203908308",
+    "https://openalex.org/W3204918758",
+    "https://openalex.org/W3206064583",
+    "https://openalex.org/W3206824631",
+    "https://openalex.org/W3206978724",
+    "https://openalex.org/W3207022909",
+    "https://openalex.org/W3210026082",
+    "https://openalex.org/W3211450563",
+    "https://openalex.org/W4200249739",
+    "https://openalex.org/W4200399482",
+    "https://openalex.org/W4200601209",
+    "https://openalex.org/W4205143015",
+    "https://openalex.org/W4206826027",
+    "https://openalex.org/W4206972995",
+    "https://openalex.org/W4210371902",
+    "https://openalex.org/W4210548518",
+    "https://openalex.org/W4210852459",
+    "https://openalex.org/W4210870577",
+    "https://openalex.org/W4213355816",
+    "https://openalex.org/W4214819330",
+    "https://openalex.org/W4223571280",
+    "https://openalex.org/W4224221080",
+    "https://openalex.org/W4224326349",
+    "https://openalex.org/W4224675622",
+    "https://openalex.org/W4225256479",
+    "https://openalex.org/W4225402571",
+    "https://openalex.org/W4225438928",
+    "https://openalex.org/W4226095014",
+    "https://openalex.org/W4226296494",
+    "https://openalex.org/W4281291033",
+    "https://openalex.org/W4281698436",
+    "https://openalex.org/W4281777906",
+    "https://openalex.org/W4283703944",
+    "https://openalex.org/W4283813823",
+    "https://openalex.org/W4284882980",
+    "https://openalex.org/W4286560871",
+    "https://openalex.org/W4288046277",
+    "https://openalex.org/W4291552384",
+    "https://openalex.org/W4291652457",
+    "https://openalex.org/W4292707897",
+    "https://openalex.org/W4293094353",
+    "https://openalex.org/W4293528028",
+    "https://openalex.org/W4294992958",
+    "https://openalex.org/W4295745509",
+    "https://openalex.org/W4295923554",
+    "https://openalex.org/W4297312538",
+    "https://openalex.org/W4297982512",
+    "https://openalex.org/W4303614082",
+    "https://openalex.org/W4304172601",
+    "https://openalex.org/W4306174805",
+    "https://openalex.org/W4306353195",
+    "https://openalex.org/W4307496994",
+    "https://openalex.org/W4308239184",
+    "https://openalex.org/W4309308375",
+    "https://openalex.org/W4310208579",
+    "https://openalex.org/W4310213180",
+    "https://openalex.org/W4311100591",
+    "https://openalex.org/W4311225868",
+    "https://openalex.org/W4311356947",
+    "https://openalex.org/W4311556529",
+    "https://openalex.org/W4311784262",
+    "https://openalex.org/W4311860189",
+    "https://openalex.org/W4311946529",
+    "https://openalex.org/W4313236104",
+    "https://openalex.org/W4313340543",
+    "https://openalex.org/W4313471718",
+    "https://openalex.org/W4313890618",
+    "https://openalex.org/W4315750296",
+    "https://openalex.org/W4316339987",
+    "https://openalex.org/W4316507374",
+    "https://openalex.org/W4317393946",
+    "https://openalex.org/W4318275377",
+    "https://openalex.org/W4319310916",
+    "https://openalex.org/W4319595562",
+    "https://openalex.org/W4320883632",
+    "https://openalex.org/W4321095309",
+    "https://openalex.org/W4321497036",
+    "https://openalex.org/W4321597003",
+    "https://openalex.org/W4322494657",
+    "https://openalex.org/W4322503300",
+    "https://openalex.org/W4322743571",
+    "https://openalex.org/W4323974782",
+    "https://openalex.org/W4324385651",
+    "https://openalex.org/W4327900088",
+    "https://openalex.org/W4360602515",
+    "https://openalex.org/W4361281235",
+    "https://openalex.org/W4362460300",
+    "https://openalex.org/W4366771311",
+    "https://openalex.org/W4366775665",
+    "https://openalex.org/W4367051143",
+    "https://openalex.org/W4367053565",
+    "https://openalex.org/W4367624649",
+    "https://openalex.org/W4376137947",
+    "https://openalex.org/W4376279961",
+    "https://openalex.org/W4376504082",
+    "https://openalex.org/W4378234723",
+    "https://openalex.org/W4381166345",
+    "https://openalex.org/W4381682099",
+    "https://openalex.org/W4381846087",
+    "https://openalex.org/W4382982095",
+    "https://openalex.org/W4383901063",
+    "https://openalex.org/W4383911020",
+    "https://openalex.org/W6803355745"
+   ],
+   "abstract_inverted_index": {
+    "The": [
+     0,
+     27,
+     81
+    ],
+    "emergence": [
+     1
+    ],
+    "and": [
+     2,
+     11,
+     23,
+     73,
+     78,
+     97,
+     122,
+     128,
+     148,
+     158
+    ],
+    "rapid": [
+     3
+    ],
+    "development": [
+     4,
+     111
+    ],
+    "of": [
+     5,
+     30,
+     40,
+     62,
+     70,
+     83,
+     91,
+     102,
+     110,
+     131,
+     154,
+     175
+    ],
+    "deep": [
+     6,
+     113
+    ],
+    "learning,": [
+     7
+    ],
+    "specifically": [
+     8
+    ],
+    "transformer-based": [
+     9
+    ],
+    "architectures": [
+     10,
+     72
+    ],
+    "attention": [
+     12,
+     74
+    ],
+    "mechanisms,": [
+     13
+    ],
+    "have": [
+     14,
+     43
+    ],
+    "had": [
+     15
+    ],
+    "transformative": [
+     16
+    ],
+    "implications": [
+     17
+    ],
+    "across": [
+     18
+    ],
+    "several": [
+     19
+    ],
+    "domains,": [
+     20
+    ],
+    "including": [
+     21
+    ],
+    "bioinformatics": [
+     22
+    ],
+    "genome": [
+     24,
+     31,
+     77,
+     103
+    ],
+    "data": [
+     25,
+     104
+    ],
+    "analysis.": [
+     26,
+     105
+    ],
+    "analogous": [
+     28
+    ],
+    "nature": [
+     29
+    ],
+    "sequences": [
+     32
+    ],
+    "to": [
+     33,
+     53,
+     76,
+     119,
+     138,
+     171,
+     184
+    ],
+    "language": [
+     34,
+     51
+    ],
+    "texts": [
+     35
+    ],
+    "has": [
+     36
+    ],
+    "enabled": [
+     37
+    ],
+    "the": [
+     38,
+     63,
+     68,
+     88,
+     100,
+     107,
+     125,
+     132,
+     155,
+     160,
+     164
+    ],
+    "application": [
+     39,
+     69
+    ],
+    "techniques": [
+     41
+    ],
+    "that": [
+     42
+    ],
+    "exhibited": [
+     44
+    ],
+    "success": [
+     45
+    ],
+    "in": [
+     46,
+     67,
+     99,
+     112,
+     163
+    ],
+    "fields": [
+     47
+    ],
+    "ranging": [
+     48
+    ],
+    "from": [
+     49,
+     182
+    ],
+    "natural": [
+     50
+    ],
+    "processing": [
+     52
+    ],
+    "genomic": [
+     54
+    ],
+    "data.": [
+     55,
+     80
+    ],
+    "This": [
+     56
+    ],
+    "review": [
+     57,
+     85,
+     136,
+     168
+    ],
+    "provides": [
+     58
+    ],
+    "a": [
+     59,
+     141,
+     151,
+     189
+    ],
+    "comprehensive": [
+     60
+    ],
+    "analysis": [
+     61
+    ],
+    "most": [
+     64
+    ],
+    "recent": [
+     65,
+     156
+    ],
+    "advancements": [
+     66,
+     157
+    ],
+    "transformer": [
+     71
+    ],
+    "mechanisms": [
+     75
+    ],
+    "transcriptome": [
+     79
+    ],
+    "focus": [
+     82
+    ],
+    "this": [
+     84,
+     135,
+     167
+    ],
+    "is": [
+     86
+    ],
+    "on": [
+     87,
+     124
+    ],
+    "critical": [
+     89
+    ],
+    "evaluation": [
+     90
+    ],
+    "these": [
+     92
+    ],
+    "techniques,": [
+     93
+    ],
+    "discussing": [
+     94
+    ],
+    "their": [
+     95
+    ],
+    "advantages": [
+     96
+    ],
+    "limitations": [
+     98
+    ],
+    "context": [
+     101
+    ],
+    "With": [
+     106
+    ],
+    "swift": [
+     108
+    ],
+    "pace": [
+     109
+    ],
+    "learning": [
+     114
+    ],
+    "methodologies,": [
+     115
+    ],
+    "it": [
+     116
+    ],
+    "becomes": [
+     117
+    ],
+    "vital": [
+     118
+    ],
+    "continually": [
+     120
+    ],
+    "assess": [
+     121
+    ],
+    "reflect": [
+     123
+    ],
+    "current": [
+     126
+    ],
+    "standing": [
+     127
+    ],
+    "future": [
+     129,
+     176
+    ],
+    "direction": [
+     130
+    ],
+    "research.": [
+     133
+    ],
+    "Therefore,": [
+     134
+    ],
+    "aims": [
+     137
+    ],
+    "serve": [
+     139
+    ],
+    "as": [
+     140,
+     188
+    ],
+    "timely": [
+     142
+    ],
+    "resource": [
+     143
+    ],
+    "for": [
+     144,
+     191
+    ],
+    "both": [
+     145
+    ],
+    "seasoned": [
+     146
+    ],
+    "researchers": [
+     147
+    ],
+    "newcomers,": [
+     149
+    ],
+    "offering": [
+     150
+    ],
+    "panoramic": [
+     152
+    ],
+    "view": [
+     153
+    ],
+    "elucidating": [
+     159
+    ],
+    "state-of-the-art": [
+     161
+    ],
+    "applications": [
+     162
+    ],
+    "field.": [
+     165
+    ],
+    "Furthermore,": [
+     166
+    ],
+    "paper": [
+     169
+    ],
+    "serves": [
+     170
+    ],
+    "highlight": [
+     172
+    ],
+    "potential": [
+     173
+    ],
+    "areas": [
+     174
+    ],
+    "investigation": [
+     177
+    ],
+    "by": [
+     178
+    ],
+    "critically": [
+     179
+    ],
+    "evaluating": [
+     180
+    ],
+    "studies": [
+     181
+    ],
+    "2019": [
+     183
+    ],
+    "2023,": [
+     185
+    ],
+    "thereby": [
+     186
+    ],
+    "acting": [
+     187
+    ],
+    "stepping-stone": [
+     190
+    ],
+    "further": [
+     192
+    ],
+    "research": [
+     193
+    ],
+    "endeavors.": [
+     194
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W3192731655",
+   "doi": "https://doi.org/10.3390/rs13152965",
+   "display_name": "Effect of Attention Mechanism in Deep Learning-Based Remote Sensing Image Processing: A Systematic Literature Review",
+   "publication_year": 2021,
+   "authorships": [
+    {
+     "author_position": "first",
+     "author": {
+      "id": "https://openalex.org/A5086426963",
+      "display_name": "Saman Ghaffarian",
+      "orcid": "https://orcid.org/0000-0001-9882-4603",
+      "observed_orcids": [
+       "https://orcid.org/0000-0001-9882-4603"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I913481162",
+       "display_name": "Wageningen University & Research",
+       "ror": "https://ror.org/04qw24q55",
+       "country_code": "NL",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ],
+     "countries": [
+      "NL"
+     ],
+     "is_corresponding": true,
+     "raw_author_name": "Saman Ghaffarian",
+     "raw_affiliation_strings": [
+      "Business Economics Group, Wageningen University & Research, 6700 EW Wageningen, The Netherlands",
+      "Information Technology Group, Wageningen University & Research, 6707 KN Wageningen, The Netherlands"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0001-9882-4603",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Business Economics Group, Wageningen University & Research, 6700 EW Wageningen, The Netherlands",
+       "institution_ids": [
+        "https://openalex.org/I913481162"
+       ]
+      },
+      {
+       "raw_affiliation_string": "Information Technology Group, Wageningen University & Research, 6707 KN Wageningen, The Netherlands",
+       "institution_ids": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "middle",
+     "author": {
+      "id": "https://openalex.org/A5086176346",
+      "display_name": "Joao Ricardo Pereira Valente",
+      "orcid": "https://orcid.org/0000-0002-6241-4124",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-6241-4124"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I913481162",
+       "display_name": "Wageningen University & Research",
+       "ror": "https://ror.org/04qw24q55",
+       "country_code": "NL",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ],
+     "countries": [
+      "NL"
+     ],
+     "is_corresponding": false,
+     "raw_author_name": "Jo\u00e3o Valente",
+     "raw_affiliation_strings": [
+      "Information Technology Group, Wageningen University & Research, 6707 KN Wageningen, The Netherlands"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0002-6241-4124",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Information Technology Group, Wageningen University & Research, 6707 KN Wageningen, The Netherlands",
+       "institution_ids": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "middle",
+     "author": {
+      "id": "https://openalex.org/A5069826864",
+      "display_name": "Mariska van der Voort",
+      "orcid": "https://orcid.org/0000-0003-0503-259X",
+      "observed_orcids": [
+       "https://orcid.org/0000-0003-0503-259X"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I913481162",
+       "display_name": "Wageningen University & Research",
+       "ror": "https://ror.org/04qw24q55",
+       "country_code": "NL",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ],
+     "countries": [
+      "NL"
+     ],
+     "is_corresponding": false,
+     "raw_author_name": "Mariska van der Voort",
+     "raw_affiliation_strings": [
+      "Business Economics Group, Wageningen University & Research, 6700 EW Wageningen, The Netherlands"
+     ],
+     "raw_orcid": null,
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Business Economics Group, Wageningen University & Research, 6700 EW Wageningen, The Netherlands",
+       "institution_ids": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ]
+    },
+    {
+     "author_position": "last",
+     "author": {
+      "id": "https://openalex.org/A5002683918",
+      "display_name": "Bedir Teki\u0307nerdo\u011fan",
+      "orcid": "https://orcid.org/0000-0002-8538-7261",
+      "observed_orcids": [
+       "https://orcid.org/0000-0002-8538-7261"
+      ]
+     },
+     "institutions": [
+      {
+       "id": "https://openalex.org/I913481162",
+       "display_name": "Wageningen University & Research",
+       "ror": "https://ror.org/04qw24q55",
+       "country_code": "NL",
+       "type": "education",
+       "lineage": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ],
+     "countries": [
+      "NL"
+     ],
+     "is_corresponding": false,
+     "raw_author_name": "Bedir Tekinerdogan",
+     "raw_affiliation_strings": [
+      "Information Technology Group, Wageningen University & Research, 6707 KN Wageningen, The Netherlands"
+     ],
+     "raw_orcid": "https://orcid.org/0000-0002-8538-7261",
+     "affiliations": [
+      {
+       "raw_affiliation_string": "Information Technology Group, Wageningen University & Research, 6707 KN Wageningen, The Netherlands",
+       "institution_ids": [
+        "https://openalex.org/I913481162"
+       ]
+      }
+     ]
+    }
+   ],
+   "cited_by_count": 213,
+   "primary_location": {
+    "id": "doi:10.3390/rs13152965",
+    "doi": "https://doi.org/10.3390/rs13152965",
+    "is_oa": true,
+    "landing_page_url": "https://doi.org/10.3390/rs13152965",
+    "pdf_url": "https://www.mdpi.com/2072-4292/13/15/2965/pdf?version=1627568111",
+    "source": {
+     "id": "https://openalex.org/S43295729",
+     "display_name": "Remote Sensing",
+     "issn_l": "2072-4292",
+     "issn": [
+      "2072-4292"
+     ],
+     "is_oa": true,
+     "is_in_doaj": true,
+     "is_core": true,
+     "listed_in": [
+      "anvur-class-a",
+      "anvur-scientific",
+      "cwts-core",
+      "doaj",
+      "jufo-1",
+      "norway-1",
+      "poland-100",
+      "russia-white-list-1",
+      "vabb-shw"
+     ],
+     "host_organization": "https://openalex.org/P4310310987",
+     "host_organization_name": "Multidisciplinary Digital Publishing Institute",
+     "host_organization_lineage": [
+      "https://openalex.org/P4310310987"
+     ],
+     "host_organization_lineage_names": [
+      "Multidisciplinary Digital Publishing Institute"
+     ],
+     "type": "journal"
+    },
+    "license": "cc-by",
+    "license_id": "https://openalex.org/licenses/cc-by",
+    "version": "publishedVersion",
+    "is_accepted": true,
+    "is_published": true,
+    "raw_source_name": "Remote Sensing",
+    "raw_type": "journal-article"
+   },
+   "type": "review",
+   "ids": {
+    "openalex": "https://openalex.org/W3192731655",
+    "doi": "https://doi.org/10.3390/rs13152965",
+    "mag": "3192731655"
+   },
+   "referenced_works": [
+    "https://openalex.org/W1514535095",
+    "https://openalex.org/W1928906481",
+    "https://openalex.org/W2073632844",
+    "https://openalex.org/W2074102825",
+    "https://openalex.org/W2085323753",
+    "https://openalex.org/W2106956101",
+    "https://openalex.org/W2111256709",
+    "https://openalex.org/W2112845172",
+    "https://openalex.org/W2128272608",
+    "https://openalex.org/W2261059368",
+    "https://openalex.org/W2412588858",
+    "https://openalex.org/W2463565445",
+    "https://openalex.org/W2474462684",
+    "https://openalex.org/W2534925027",
+    "https://openalex.org/W2536897425",
+    "https://openalex.org/W2567285691",
+    "https://openalex.org/W2592962403",
+    "https://openalex.org/W2648242067",
+    "https://openalex.org/W2752782242",
+    "https://openalex.org/W2764034829",
+    "https://openalex.org/W2782522152",
+    "https://openalex.org/W2804078698",
+    "https://openalex.org/W2804532080",
+    "https://openalex.org/W2890732922",
+    "https://openalex.org/W2891635683",
+    "https://openalex.org/W2897246379",
+    "https://openalex.org/W2897283027",
+    "https://openalex.org/W2900094710",
+    "https://openalex.org/W2900147932",
+    "https://openalex.org/W2911814348",
+    "https://openalex.org/W2920964209",
+    "https://openalex.org/W2937675449",
+    "https://openalex.org/W2937933649",
+    "https://openalex.org/W2940726923",
+    "https://openalex.org/W2942170965",
+    "https://openalex.org/W2944418962",
+    "https://openalex.org/W2944971001",
+    "https://openalex.org/W2945127520",
+    "https://openalex.org/W2962822108",
+    "https://openalex.org/W2963006576",
+    "https://openalex.org/W2963064196",
+    "https://openalex.org/W2963420686",
+    "https://openalex.org/W2963695810",
+    "https://openalex.org/W2964164961",
+    "https://openalex.org/W2964189376",
+    "https://openalex.org/W2969238677",
+    "https://openalex.org/W2972081044",
+    "https://openalex.org/W2973777195",
+    "https://openalex.org/W2974373385",
+    "https://openalex.org/W2975331005",
+    "https://openalex.org/W2980419920",
+    "https://openalex.org/W2980881023",
+    "https://openalex.org/W2981266721",
+    "https://openalex.org/W2981895542",
+    "https://openalex.org/W2983376237",
+    "https://openalex.org/W2983573090",
+    "https://openalex.org/W2989218065",
+    "https://openalex.org/W2989871747",
+    "https://openalex.org/W2991286101",
+    "https://openalex.org/W2992172495",
+    "https://openalex.org/W2994033677",
+    "https://openalex.org/W2994681282",
+    "https://openalex.org/W2997150065",
+    "https://openalex.org/W2997597702",
+    "https://openalex.org/W3003295287",
+    "https://openalex.org/W3003397706",
+    "https://openalex.org/W3003882269",
+    "https://openalex.org/W3004423752",
+    "https://openalex.org/W3004732939",
+    "https://openalex.org/W3004916592",
+    "https://openalex.org/W3009942016",
+    "https://openalex.org/W3011515952",
+    "https://openalex.org/W3016174083",
+    "https://openalex.org/W3017622525",
+    "https://openalex.org/W3019448917",
+    "https://openalex.org/W3022548607",
+    "https://openalex.org/W3026300872",
+    "https://openalex.org/W3026707368",
+    "https://openalex.org/W3026889349",
+    "https://openalex.org/W3028448552",
+    "https://openalex.org/W3031015423",
+    "https://openalex.org/W3031696400",
+    "https://openalex.org/W3031696893",
+    "https://openalex.org/W3032837604",
+    "https://openalex.org/W3032940603",
+    "https://openalex.org/W3034600949",
+    "https://openalex.org/W3036679688",
+    "https://openalex.org/W3038833292",
+    "https://openalex.org/W3041525128",
+    "https://openalex.org/W3041614910",
+    "https://openalex.org/W3042203953",
+    "https://openalex.org/W3043181422",
+    "https://openalex.org/W3043183554",
+    "https://openalex.org/W3043257208",
+    "https://openalex.org/W3045918052",
+    "https://openalex.org/W3046109728",
+    "https://openalex.org/W3047238784",
+    "https://openalex.org/W3048029844",
+    "https://openalex.org/W3048447490",
+    "https://openalex.org/W3049361954",
+    "https://openalex.org/W3049736620",
+    "https://openalex.org/W3064134516",
+    "https://openalex.org/W3080988368",
+    "https://openalex.org/W3081119210",
+    "https://openalex.org/W3082183666",
+    "https://openalex.org/W3083219173",
+    "https://openalex.org/W3085788754",
+    "https://openalex.org/W3088162569",
+    "https://openalex.org/W3089074938",
+    "https://openalex.org/W3089396110",
+    "https://openalex.org/W3090775239",
+    "https://openalex.org/W3091542555",
+    "https://openalex.org/W3091877343",
+    "https://openalex.org/W3091886286",
+    "https://openalex.org/W3097781638",
+    "https://openalex.org/W3101082097",
+    "https://openalex.org/W3103092912",
+    "https://openalex.org/W3106935756",
+    "https://openalex.org/W3107075006",
+    "https://openalex.org/W3107310172",
+    "https://openalex.org/W3111813289",
+    "https://openalex.org/W3112594048",
+    "https://openalex.org/W3112979587",
+    "https://openalex.org/W3113331579",
+    "https://openalex.org/W3113877107",
+    "https://openalex.org/W3114672960",
+    "https://openalex.org/W3115223653",
+    "https://openalex.org/W3118773117",
+    "https://openalex.org/W3119001219",
+    "https://openalex.org/W3119959759",
+    "https://openalex.org/W3123961948",
+    "https://openalex.org/W3124539583",
+    "https://openalex.org/W3125283673",
+    "https://openalex.org/W3125860323",
+    "https://openalex.org/W3126941930",
+    "https://openalex.org/W3127180160",
+    "https://openalex.org/W3128544109",
+    "https://openalex.org/W3129260846",
+    "https://openalex.org/W3129824893",
+    "https://openalex.org/W3132784030",
+    "https://openalex.org/W3133018110",
+    "https://openalex.org/W3134428470",
+    "https://openalex.org/W3135493063",
+    "https://openalex.org/W3137634992",
+    "https://openalex.org/W3146366485",
+    "https://openalex.org/W3150181202",
+    "https://openalex.org/W3163593447"
+   ],
+   "abstract_inverted_index": {
+    "Machine": [
+     0
+    ],
+    "learning,": [
+     1
+    ],
+    "particularly": [
+     2
+    ],
+    "deep": [
+     3,
+     115,
+     133,
+     149
+    ],
+    "learning": [
+     4,
+     116,
+     150
+    ],
+    "(DL),": [
+     5
+    ],
+    "has": [
+     6,
+     56,
+     64
+    ],
+    "become": [
+     7
+    ],
+    "a": [
+     8
+    ],
+    "central": [
+     9
+    ],
+    "and": [
+     10,
+     18,
+     92,
+     108,
+     140,
+     181,
+     188,
+     194,
+     212,
+     234,
+     237,
+     265,
+     298
+    ],
+    "state-of-the-art": [
+     11
+    ],
+    "method": [
+     12
+    ],
+    "for": [
+     13,
+     68,
+     196,
+     262,
+     291
+    ],
+    "several": [
+     14
+    ],
+    "computer": [
+     15
+    ],
+    "vision": [
+     16
+    ],
+    "applications": [
+     17,
+     71
+    ],
+    "remote": [
+     19,
+     302
+    ],
+    "sensing": [
+     20,
+     303
+    ],
+    "(RS)": [
+     21
+    ],
+    "image": [
+     22,
+     136,
+     226,
+     230,
+     292,
+     294
+    ],
+    "processing.": [
+     23,
+     137
+    ],
+    "Researchers": [
+     24
+    ],
+    "are": [
+     25,
+     84
+    ],
+    "continually": [
+     26
+    ],
+    "trying": [
+     27
+    ],
+    "to": [
+     28,
+     72,
+     110,
+     124,
+     159,
+     191,
+     207,
+     257
+    ],
+    "improve": [
+     29,
+     73
+    ],
+    "the": [
+     30,
+     33,
+     42,
+     53,
+     74,
+     77,
+     90,
+     95,
+     104,
+     126,
+     129,
+     142,
+     145,
+     161,
+     183,
+     209,
+     215,
+     220,
+     223,
+     239,
+     258,
+     274,
+     284,
+     288
+    ],
+    "performance": [
+     31
+    ],
+    "of": [
+     32,
+     41,
+     60,
+     76,
+     94,
+     103,
+     128,
+     250,
+     273
+    ],
+    "DL": [
+     34,
+     79,
+     167,
+     289
+    ],
+    "methods": [
+     35,
+     83,
+     290
+    ],
+    "by": [
+     36
+    ],
+    "developing": [
+     37,
+     45
+    ],
+    "new": [
+     38,
+     46
+    ],
+    "architectural": [
+     39
+    ],
+    "designs": [
+     40
+    ],
+    "networks": [
+     43
+    ],
+    "and/or": [
+     44
+    ],
+    "techniques,": [
+     47
+    ],
+    "such": [
+     48
+    ],
+    "as": [
+     49
+    ],
+    "attention": [
+     50,
+     54,
+     106,
+     130,
+     147,
+     172,
+     285
+    ],
+    "mechanisms.": [
+     51
+    ],
+    "Since": [
+     52
+    ],
+    "mechanism": [
+     55,
+     131,
+     286
+    ],
+    "been": [
+     57,
+     65
+    ],
+    "proposed,": [
+     58
+    ],
+    "regardless": [
+     59
+    ],
+    "its": [
+     61
+    ],
+    "type,": [
+     62
+    ],
+    "it": [
+     63,
+     122
+    ],
+    "increasingly": [
+     66
+    ],
+    "used": [
+     67
+    ],
+    "diverse": [
+     69
+    ],
+    "RS": [
+     70,
+     135,
+     225
+    ],
+    "performances": [
+     75
+    ],
+    "existing": [
+     78
+    ],
+    "methods.": [
+     80,
+     152
+    ],
+    "However,": [
+     81
+    ],
+    "these": [
+     82
+    ],
+    "scattered": [
+     85
+    ],
+    "over": [
+     86
+    ],
+    "different": [
+     87,
+     114
+    ],
+    "studies": [
+     88
+    ],
+    "impeding": [
+     89
+    ],
+    "selection": [
+     91
+    ],
+    "application": [
+     93
+    ],
+    "feasible": [
+     96
+    ],
+    "approaches.": [
+     97
+    ],
+    "This": [
+     98
+    ],
+    "study": [
+     99
+    ],
+    "provides": [
+     100
+    ],
+    "an": [
+     101,
+     277
+    ],
+    "overview": [
+     102
+    ],
+    "developed": [
+     105
+    ],
+    "mechanisms": [
+     107
+    ],
+    "how": [
+     109
+    ],
+    "integrate": [
+     111
+    ],
+    "them": [
+     112
+    ],
+    "with": [
+     113
+    ],
+    "neural": [
+     117
+    ],
+    "network": [
+     118
+    ],
+    "architectures.": [
+     119
+    ],
+    "In": [
+     120,
+     244
+    ],
+    "addition,": [
+     121
+    ],
+    "aims": [
+     123
+    ],
+    "investigate": [
+     125
+    ],
+    "effect": [
+     127
+    ],
+    "on": [
+     132
+    ],
+    "learning-based": [
+     134
+    ],
+    "We": [
+     138
+    ],
+    "identified": [
+     139
+    ],
+    "analyzed": [
+     141
+    ],
+    "advances": [
+     143
+    ],
+    "in": [
+     144,
+     163,
+     279
+    ],
+    "corresponding": [
+     146
+    ],
+    "mechanism-based": [
+     148
+    ],
+    "(At-DL)": [
+     151
+    ],
+    "A": [
+     153
+    ],
+    "systematic": [
+     154
+    ],
+    "literature": [
+     155
+    ],
+    "review": [
+     156
+    ],
+    "was": [
+     157
+    ],
+    "performed": [
+     158
+    ],
+    "identify": [
+     160
+    ],
+    "trends": [
+     162
+    ],
+    "publications,": [
+     164
+    ],
+    "publishers,": [
+     165
+    ],
+    "improved": [
+     166
+    ],
+    "methods,": [
+     168,
+     180
+    ],
+    "data": [
+     169,
+     211
+    ],
+    "types": [
+     170,
+     173
+    ],
+    "used,": [
+     171,
+     174
+    ],
+    "overall": [
+     175,
+     280
+    ],
+    "accuracies": [
+     176
+    ],
+    "achieved": [
+     177
+    ],
+    "using": [
+     178,
+     283,
+     301
+    ],
+    "At-DL": [
+     179
+    ],
+    "extracted": [
+     182
+    ],
+    "current": [
+     184
+    ],
+    "research": [
+     185,
+     203
+    ],
+    "directions,": [
+     186
+    ],
+    "weaknesses,": [
+     187
+    ],
+    "open": [
+     189
+    ],
+    "problems": [
+     190
+    ],
+    "provide": [
+     192
+    ],
+    "insights": [
+     193
+    ],
+    "recommendations": [
+     195
+    ],
+    "future": [
+     197
+    ],
+    "studies.": [
+     198
+    ],
+    "For": [
+     199
+    ],
+    "this,": [
+     200
+    ],
+    "five": [
+     201
+    ],
+    "main": [
+     202
+    ],
+    "questions": [
+     204
+    ],
+    "were": [
+     205,
+     248,
+     254
+    ],
+    "formulated": [
+     206
+    ],
+    "extract": [
+     208
+    ],
+    "required": [
+     210
+    ],
+    "information": [
+     213
+    ],
+    "from": [
+     214
+    ],
+    "literature.": [
+     216
+    ],
+    "Furthermore,": [
+     217
+    ],
+    "we": [
+     218
+    ],
+    "categorized": [
+     219
+    ],
+    "papers": [
+     221,
+     247,
+     253,
+     275
+    ],
+    "regarding": [
+     222
+    ],
+    "addressed": [
+     224
+    ],
+    "processing": [
+     227
+    ],
+    "tasks": [
+     228
+    ],
+    "(e.g.,": [
+     229
+    ],
+    "classification,": [
+     231,
+     293
+    ],
+    "object": [
+     232,
+     299
+    ],
+    "detection,": [
+     233,
+     297
+    ],
+    "change": [
+     235,
+     296
+    ],
+    "detection)": [
+     236
+    ],
+    "discussed": [
+     238
+    ],
+    "results": [
+     240,
+     269
+    ],
+    "within": [
+     241,
+     287
+    ],
+    "each": [
+     242
+    ],
+    "group.": [
+     243
+    ],
+    "total,": [
+     245
+    ],
+    "270": [
+     246
+    ],
+    "retrieved,": [
+     249
+    ],
+    "which": [
+     251
+    ],
+    "176": [
+     252
+    ],
+    "selected": [
+     255
+    ],
+    "according": [
+     256
+    ],
+    "defined": [
+     259
+    ],
+    "exclusion": [
+     260
+    ],
+    "criteria": [
+     261
+    ],
+    "further": [
+     263
+    ],
+    "analysis": [
+     264
+    ],
+    "detailed": [
+     266
+    ],
+    "review.": [
+     267
+    ],
+    "The": [
+     268
+    ],
+    "reveal": [
+     270
+    ],
+    "that": [
+     271
+    ],
+    "most": [
+     272
+    ],
+    "reported": [
+     276
+    ],
+    "increase": [
+     278
+    ],
+    "accuracy": [
+     281
+    ],
+    "when": [
+     282
+    ],
+    "segmentation,": [
+     295
+    ],
+    "detection": [
+     300
+    ],
+    "images.": [
+     304
+    ]
+   }
+  }
+ ],
+ "group_by": []
+}

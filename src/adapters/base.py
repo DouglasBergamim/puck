@@ -8,7 +8,7 @@ import json
 import math
 from pathlib import PurePosixPath
 
-from core.model import CAPABILITIES, DESCRIPTION, Agent, Event, File, HookRule, Result, Skill, ToolMap, frontmatter
+from core.common.model import CAPABILITIES, DESCRIPTION, Agent, Event, File, HookRule, Result, Skill, ToolMap, frontmatter
 
 
 def text_file(path: str, text: str) -> File:

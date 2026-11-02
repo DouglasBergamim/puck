@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from core import context, paths, scratch, skills, store, tasks
+from core.common import paths, store
+from core.common.errors import PuckError
+from core.primitives import skills
+from core.tools.work import pack, scratch, tasks
 from tests.test_hooks import call
 from tests.test_build_and_lint import template, add_skill
 
@@ -141,15 +144,15 @@ def test_pack_is_capped_paths_only_and_ranked(puck_home):
     paths.retros().mkdir(parents=True)
     for number in range(100):
         (paths.retros() / f"login-{number}.md").write_text("# Login retro\n\nFixed a login thing\n")
-    text = context.pack("fix the login bug")
-    assert len(text) <= context.PACK_LIMIT
+    text = pack.pack("fix the login bug")
+    assert len(text) <= pack.PACK_LIMIT
     assert "login-debug" in text and "[retro]" in text
 
 
 def test_pack_excludes_drafts_and_mentions_proposals(puck_home):
     add_skill(puck_home, "login-debug", template("login-debug"))
     skills.propose("rule" if False else "instruction", "t", "global", "Be brief", "Be brief.")
-    text = context.pack("login")
+    text = pack.pack("login")
     assert "login-debug" not in text and "1 proposal" in text
 
 
@@ -169,7 +172,7 @@ def test_scratch_numbers_experiments_and_gc_keeps_recent(puck_home, repo):
 def test_new_skill_is_a_draft_and_refuses_duplicates(puck_home):
     path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
     assert "status: draft" in (path / "SKILL.md").read_text()
-    with pytest.raises(tasks.TaskError, match="skill-patch"):
+    with pytest.raises(PuckError, match="skill-patch"):
         skills.new("deploy-steps", "again", "t2")
 
 
@@ -184,7 +187,7 @@ def test_instruction_proposal_respects_budget(puck_home):
     assert "Short rule" in paths.instructions().read_text()
     assert not good.exists() and (paths.proposals() / "done" / good.name).exists()
     bad = skills.propose("instruction", "t", "global", "Huge", "x" * 7000)
-    with pytest.raises(tasks.TaskError, match="Over budget"):
+    with pytest.raises(PuckError, match="Over budget"):
         skills.resolve(bad.stem, approve=True)
     assert bad.exists() and "xxxx" not in paths.instructions().read_text()
 
@@ -209,12 +212,12 @@ def test_promote_activates_commits_and_reverts_cleanly(puck_home):
     assert (puck_home / "dist/claude/skills/deploy-steps/SKILL.md").exists()
     assert (puck_home / "dist/claude/evals/deploy-steps-triggers/prompt.md").exists()
     git(puck_home, "revert", "--no-edit", "HEAD")
-    from core import build
+    from core.primitives import build
     build.build_all(puck_home)
     assert not (puck_home / "dist/claude/skills/deploy-steps").exists()
 
 
 def test_promote_needs_evals(puck_home):
     skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
-    with pytest.raises(tasks.TaskError, match="no eval cases"):
+    with pytest.raises(PuckError, match="no eval cases"):
         skills.promote("deploy-steps", run_evals=False)

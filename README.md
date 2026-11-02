@@ -13,8 +13,8 @@
 
 | Folder | What it holds |
 |---|---|
-| `context/` | The source of truth for everything the LLM sees: skills, agents, instructions, hook rules, knowledge, past retros and proposals |
-| `src/core/` | The harness-neutral implementation |
+| `context/` | The source of truth for everything the LLM sees: skills, agents, instructions, hook rules, study topics, past retros and proposals |
+| `src/core/` | The harness-neutral implementation: `common/`, `primitives/`, `tools/work/`, `tools/learning/` |
 | `src/adapters/` | One deterministic transform per harness |
 | `src/cli/` | The `puck` command |
 | `docs/` | Design, spike results and research |

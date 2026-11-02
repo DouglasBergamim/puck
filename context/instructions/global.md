@@ -7,6 +7,7 @@ Puck is installed. Its home is the `PUCK_HOME` folder, and the `puck` command is
 - Any work beyond a quick question or one-line fix is a task. Load the `task` skill and follow it from start to close.
 - You own the whole workflow, including the retro at the end. Don't wait for the user to ask for it.
 - Run `puck task start` before anything else, then read what its task pack points to.
+- Study sessions are the exception: the `teach` skill keeps its state in the topic folder, so it opens no task.
 
 ## Always
 

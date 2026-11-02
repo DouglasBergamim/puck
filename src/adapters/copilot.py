@@ -7,7 +7,7 @@ nested output. Both payloads carry the `cwd` and `stop_hook_active` fields Puck 
 from pathlib import PurePosixPath
 
 from adapters.base import PluginAdapter, text_file
-from core.model import Agent, Event, File, HookRule, Result, ToolMap, frontmatter
+from core.common.model import Agent, Event, File, HookRule, Result, ToolMap, frontmatter
 
 CLI_EVENTS = {"session-start": "sessionStart", "stop": "agentStop"}
 VSCODE_EVENTS = {"session-start": "SessionStart", "stop": "Stop"}

@@ -8,8 +8,11 @@ import pytest
 
 import adapters
 from adapters.base import PluginAdapter
-from core import build, hooks, paths, tasks
-from core.model import Event
+from core.common import paths
+from core.common.model import Event
+from core.primitives import build
+from core.tools.work import tasks
+from core import hooks
 
 TESTS = Path(__file__).parent
 FIXTURES = TESTS / "fixtures"
@@ -62,7 +65,7 @@ def test_generic_gives_any_harness_agents_md_and_skills():
 def test_core_never_names_a_harness():
     names = re.compile(r"claude|copilot|cursor|codex|gemini", re.IGNORECASE)
     source = TESTS.parent / "src"
-    offenders = [str(p) for folder in ("core", "cli") for p in (source / folder).glob("*.py")
+    offenders = [str(p) for folder in ("core", "cli") for p in (source / folder).rglob("*.py")
                  if names.search(p.read_text())]
     assert offenders == []
 

@@ -1,0 +1,459 @@
+{
+ "id": "https://openalex.org/W3134435812",
+ "doi": "https://doi.org/10.3390/e23030283",
+ "display_name": "Attention Mechanisms and Their Applications to Complex Systems",
+ "publication_year": 2021,
+ "authorships": [
+  {
+   "author_position": "first",
+   "author": {
+    "id": null,
+    "display_name": "Adri\u00e1n Hern\u00e1ndez",
+    "orcid": "https://orcid.org/0000-0002-7534-4612",
+    "observed_orcids": [
+     "https://orcid.org/0000-0002-7534-4612"
+    ]
+   },
+   "institutions": [
+    {
+     "id": "https://openalex.org/I111262870",
+     "display_name": "Universitat de Miguel Hern\u00e1ndez d'Elx",
+     "ror": "https://ror.org/01azzms13",
+     "country_code": "ES",
+     "type": "education",
+     "lineage": [
+      "https://openalex.org/I111262870"
+     ]
+    }
+   ],
+   "countries": [
+    "ES"
+   ],
+   "is_corresponding": false,
+   "raw_author_name": "Adri\u00e1n Hern\u00e1ndez",
+   "raw_affiliation_strings": [
+    "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain"
+   ],
+   "raw_orcid": "https://orcid.org/0000-0002-7534-4612",
+   "affiliations": [
+    {
+     "raw_affiliation_string": "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain",
+     "institution_ids": [
+      "https://openalex.org/I111262870"
+     ]
+    }
+   ]
+  },
+  {
+   "author_position": "last",
+   "author": {
+    "id": "https://openalex.org/A5091274013",
+    "display_name": "Jos\u00e9 M. Amig\u00f3",
+    "orcid": "https://orcid.org/0000-0002-1642-1171",
+    "observed_orcids": [
+     "https://orcid.org/0000-0002-1642-1171"
+    ]
+   },
+   "institutions": [
+    {
+     "id": "https://openalex.org/I111262870",
+     "display_name": "Universitat de Miguel Hern\u00e1ndez d'Elx",
+     "ror": "https://ror.org/01azzms13",
+     "country_code": "ES",
+     "type": "education",
+     "lineage": [
+      "https://openalex.org/I111262870"
+     ]
+    }
+   ],
+   "countries": [
+    "ES"
+   ],
+   "is_corresponding": true,
+   "raw_author_name": "Jos\u00e9 M. Amig\u00f3",
+   "raw_affiliation_strings": [
+    "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain"
+   ],
+   "raw_orcid": "https://orcid.org/0000-0002-1642-1171",
+   "affiliations": [
+    {
+     "raw_affiliation_string": "Centro de Investigaci\u00f3n Operativa, Universidad Miguel Hern\u00e1ndez, Av. de la Universidad s/n, 03202 Elche, Spain",
+     "institution_ids": [
+      "https://openalex.org/I111262870"
+     ]
+    }
+   ]
+  }
+ ],
+ "cited_by_count": 140,
+ "primary_location": {
+  "id": "doi:10.3390/e23030283",
+  "doi": "https://doi.org/10.3390/e23030283",
+  "is_oa": true,
+  "landing_page_url": "https://doi.org/10.3390/e23030283",
+  "pdf_url": "https://www.mdpi.com/1099-4300/23/3/283/pdf?version=1616138122",
+  "source": {
+   "id": "https://openalex.org/S195231649",
+   "display_name": "Entropy",
+   "issn_l": "1099-4300",
+   "issn": [
+    "1099-4300"
+   ],
+   "is_oa": true,
+   "is_in_doaj": true,
+   "is_core": true,
+   "listed_in": [
+    "anvur-class-a",
+    "anvur-scientific",
+    "cwts-core",
+    "doaj",
+    "norway-1",
+    "poland-100",
+    "russia-white-list-2",
+    "vabb-shw"
+   ],
+   "host_organization": "https://openalex.org/P4310310987",
+   "host_organization_name": "Multidisciplinary Digital Publishing Institute",
+   "host_organization_lineage": [
+    "https://openalex.org/P4310310987"
+   ],
+   "host_organization_lineage_names": [
+    "Multidisciplinary Digital Publishing Institute"
+   ],
+   "type": "journal"
+  },
+  "license": "cc-by",
+  "license_id": "https://openalex.org/licenses/cc-by",
+  "version": "publishedVersion",
+  "is_accepted": true,
+  "is_published": true,
+  "raw_source_name": "Entropy",
+  "raw_type": "journal-article"
+ },
+ "type": "review",
+ "ids": {
+  "openalex": "https://openalex.org/W3134435812",
+  "doi": "https://doi.org/10.3390/e23030283",
+  "mag": "3134435812",
+  "pmid": "https://pubmed.ncbi.nlm.nih.gov/33652728",
+  "pmcid": "https://www.ncbi.nlm.nih.gov/pmc/articles/7996841"
+ },
+ "referenced_works": [
+  "https://openalex.org/W1524454772",
+  "https://openalex.org/W1547840952",
+  "https://openalex.org/W1793121960",
+  "https://openalex.org/W1802196594",
+  "https://openalex.org/W1944750461",
+  "https://openalex.org/W2005708641",
+  "https://openalex.org/W2053377145",
+  "https://openalex.org/W2063056630",
+  "https://openalex.org/W2064675550",
+  "https://openalex.org/W2101113449",
+  "https://openalex.org/W2130942839",
+  "https://openalex.org/W2133564696",
+  "https://openalex.org/W2138484437",
+  "https://openalex.org/W2155375964",
+  "https://openalex.org/W2157331557",
+  "https://openalex.org/W2165766447",
+  "https://openalex.org/W2410938517",
+  "https://openalex.org/W2530887700",
+  "https://openalex.org/W2613328025",
+  "https://openalex.org/W2626778328",
+  "https://openalex.org/W2735778951",
+  "https://openalex.org/W2738335552",
+  "https://openalex.org/W2745461083",
+  "https://openalex.org/W2766447205",
+  "https://openalex.org/W2767395101",
+  "https://openalex.org/W2786209943",
+  "https://openalex.org/W2796813311",
+  "https://openalex.org/W2887681367",
+  "https://openalex.org/W2888539709",
+  "https://openalex.org/W2891511127",
+  "https://openalex.org/W2901180824",
+  "https://openalex.org/W2903941857",
+  "https://openalex.org/W2905193157",
+  "https://openalex.org/W2914623577",
+  "https://openalex.org/W2919115771",
+  "https://openalex.org/W2948140294",
+  "https://openalex.org/W2950527759",
+  "https://openalex.org/W2950635152",
+  "https://openalex.org/W2951008357",
+  "https://openalex.org/W2963287297",
+  "https://openalex.org/W2963532813",
+  "https://openalex.org/W2964199361",
+  "https://openalex.org/W2986364431",
+  "https://openalex.org/W2987106249",
+  "https://openalex.org/W2988226917",
+  "https://openalex.org/W3016489761",
+  "https://openalex.org/W3030163527",
+  "https://openalex.org/W3104945870",
+  "https://openalex.org/W3112706813"
+ ],
+ "abstract_inverted_index": {
+  "Deep": [
+   0
+  ],
+  "learning": [
+   1
+  ],
+  "models": [
+   2,
+   35
+  ],
+  "and": [
+   3,
+   18,
+   28,
+   50,
+   77,
+   82
+  ],
+  "graphics": [
+   4
+  ],
+  "processing": [
+   5
+  ],
+  "units": [
+   6
+  ],
+  "have": [
+   7,
+   22,
+   57
+  ],
+  "completely": [
+   8
+  ],
+  "transformed": [
+   9
+  ],
+  "the": [
+   10,
+   71,
+   104
+  ],
+  "field": [
+   11
+  ],
+  "of": [
+   12,
+   74,
+   100,
+   106
+  ],
+  "machine": [
+   13,
+   92
+  ],
+  "learning.": [
+   14,
+   93
+  ],
+  "Recurrent": [
+   15
+  ],
+  "neural": [
+   16
+  ],
+  "networks": [
+   17
+  ],
+  "long": [
+   19
+  ],
+  "short-term": [
+   20
+  ],
+  "memories": [
+   21
+  ],
+  "been": [
+   23
+  ],
+  "successfully": [
+   24
+  ],
+  "used": [
+   25
+  ],
+  "to": [
+   26,
+   63
+  ],
+  "model": [
+   27
+  ],
+  "predict": [
+   29
+  ],
+  "complex": [
+   30,
+   107
+  ],
+  "systems.": [
+   31,
+   108
+  ],
+  "However,": [
+   32
+  ],
+  "these": [
+   33,
+   64,
+   101
+  ],
+  "classic": [
+   34
+  ],
+  "do": [
+   36
+  ],
+  "not": [
+   37
+  ],
+  "perform": [
+   38
+  ],
+  "sequential": [
+   39
+  ],
+  "reasoning,": [
+   40
+  ],
+  "a": [
+   41,
+   45,
+   60,
+   88
+  ],
+  "process": [
+   42
+  ],
+  "that": [
+   43
+  ],
+  "guides": [
+   44
+  ],
+  "task": [
+   46
+  ],
+  "based": [
+   47
+  ],
+  "on": [
+   48
+  ],
+  "perception": [
+   49
+  ],
+  "memory.": [
+   51
+  ],
+  "In": [
+   52,
+   66
+  ],
+  "recent": [
+   53
+  ],
+  "years,": [
+   54
+  ],
+  "attention": [
+   55,
+   75,
+   80
+  ],
+  "mechanisms": [
+   56,
+   76
+  ],
+  "emerged": [
+   58
+  ],
+  "as": [
+   59
+  ],
+  "promising": [
+   61
+  ],
+  "solution": [
+   62
+  ],
+  "problems.": [
+   65
+  ],
+  "this": [
+   67
+  ],
+  "review,": [
+   68
+  ],
+  "we": [
+   69,
+   95
+  ],
+  "describe": [
+   70
+  ],
+  "key": [
+   72
+  ],
+  "aspects": [
+   73
+  ],
+  "some": [
+   78,
+   97
+  ],
+  "relevant": [
+   79
+  ],
+  "techniques": [
+   81,
+   102
+  ],
+  "point": [
+   83
+  ],
+  "out": [
+   84
+  ],
+  "why": [
+   85
+  ],
+  "they": [
+   86
+  ],
+  "are": [
+   87
+  ],
+  "remarkable": [
+   89
+  ],
+  "advance": [
+   90
+  ],
+  "in": [
+   91,
+   103
+  ],
+  "Then,": [
+   94
+  ],
+  "illustrate": [
+   96
+  ],
+  "important": [
+   98
+  ],
+  "applications": [
+   99
+  ],
+  "modeling": [
+   105
+  ]
+ }
+}

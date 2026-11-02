@@ -1,9 +1,9 @@
 ---
 name: task
 description: >-
-  Run any non-trivial piece of work from start to close: context, scratch
-  experiments, verification, retro and proposals. Use for building, fixing,
-  researching, planning or studying. Not for quick questions or one-line fixes.
+  Carry non-trivial work from start to a verified close. Use for building or
+  fixing code, and for a full research run on a topic. Not for quick questions,
+  one-line fixes or study sessions (use teach).
 metadata:
   version: "1"
   status: active

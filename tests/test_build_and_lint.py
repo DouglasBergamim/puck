@@ -2,7 +2,8 @@ import json
 import shutil
 from pathlib import Path
 
-from core import build, lint, paths
+from core.common import paths
+from core.primitives import build, lint
 
 REPO = Path(__file__).resolve().parent.parent
 AGENT = (paths.templates(REPO) / "agent.md").read_text()

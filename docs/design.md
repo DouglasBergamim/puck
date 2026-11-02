@@ -68,7 +68,23 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 
 **Parallel work.** The host runs the agents, and Puck keeps them from colliding. There's no global active task: hooks and commands find the plan from the working directory, so each worktree from `puck task start --worktree` sees only its own. Shared writes go through file locks. Merging stays your decision.
 
-**Not built yet:** the `kb`, `learn` and `research` skills, the `researcher` and `claim-checker` agents, spaced repetition, external search, an MCP server and cross-host memory.
+**Research and learning.** Each topic gets a folder in `context/knowledge/<topic>/`, which holds its state on every host. Skills cover the steps that need the user: `scope`, `field-map`, `literature`, `reading-path`, `teach`, `practice`, `visualize` and `kb`. Agents cover one-shot jobs that need fresh eyes: `researcher`, `claim-checker` and `grader`. Commands cover anything a program can do exactly:
+- `puck sources` searches OpenAlex, Semantic Scholar, arXiv and Open Library, walks citation graphs, and checks quotes against saved text.
+- `puck kb lint` fails any wiki claim that doesn't trace to a source.
+- `puck learn next` picks the next concept by its prerequisites.
+- `puck exercise check` runs an exercise's tests.
+
+There is no teacher agent. Teaching is a conversation, and a subagent can't hold one, so the main session runs `teach`.
+
+| The user wants to… | Skills, in order |
+|---|---|
+| Research a field | `scope` → `field-map` → `literature` → `reading-path`, as one task of type `research` |
+| Study it | `teach`, calling `practice` and `visualize`; no task, since the topic folder holds the state |
+| File a source, or ask the notes | `kb` |
+
+Concept statuses are `unseen`, `introduced`, `practised`, `recalled-later` and `can-explain`. They record what happened, so none can be read as mastery.
+
+**Not built yet:** spaced repetition with py-fsrs (next), paid search APIs, an MCP server and cross-host memory.
 
 ## Architecture
 
@@ -80,8 +96,8 @@ flowchart TB
 
     subgraph behaviour["context/ behaviour"]
         rules["instructions/ and profile.md"]
-        skills["skills/: task, plan, review"]
-        agents["agents/: reviewer, retro"]
+        skills["skills/: task, plan, review; scope, field-map, literature, reading-path, teach, practice, visualize, kb"]
+        agents["agents/: reviewer, retro, researcher, claim-checker, grader"]
         hookrules["hooks.yaml: resume, close-guard"]
     end
 
@@ -110,7 +126,7 @@ flowchart TB
     state["state/: task registry, locks, hook log"]
 
     subgraph data["context/ data"]
-        knowledge["knowledge/: not created yet"]
+        knowledge["knowledge/: one folder per topic"]
         archive["tasks/: past retros"]
         proposals["proposals/: waiting for your OK"]
     end
@@ -144,11 +160,11 @@ puck/
   context/             # source of truth for everything the LLM sees
     instructions/      # global.md, the always-on rules
     profile.md         # hand-written facts about you
-    skills/            # task, plan, review; each has SKILL.md and evals/
-    agents/            # reviewer, retro
+    skills/            # each has SKILL.md and evals/
+    agents/            # reviewer, retro, researcher, claim-checker, grader
     hooks.yaml         # resume, close-guard
-    templates/         # SPEC, skill, agent, retro
-    knowledge/         # study material; not created yet
+    templates/         # SPEC, skill, agent, retro; mission, map, path, session
+    knowledge/<topic>/ # mission, map, path, sources.json, raw/, wiki/, sessions/, exercises/, visuals/
     tasks/             # archived retros; created at first close
     proposals/         # changes waiting for your OK; done/ is gitignored
   docs/
@@ -156,19 +172,14 @@ puck/
     spikes.md          # what's been tested on each host
     research/          # evidence behind the design
   src/
-    core/              # harness-neutral
-      build.py         # load context, run adapters, write dist/
-      context.py       # task pack
+    core/              # harness-neutral, layered: each part imports only the ones above it
+      common/          # model, paths, store, errors
+      primitives/      # build, lint, skills: context/ into host packages
+      tools/work/      # tasks, pack, scratch: the task loop
+      tools/learning/  # topics, kb, exercises, sources/: research and study
       hooks.py         # hook entry point and handlers
-      lint.py          # checks on primitives and budgets
-      model.py         # shared types
-      paths.py         # the folder layout
-      scratch.py       # experiments and cleanup
-      skills.py        # skill lifecycle and proposals
-      store.py         # locked, atomic writes
-      tasks.py         # tasks, steps, checks and close
     adapters/          # base.py is the generic harness; claude.py, copilot.py
-    cli/               # main.py, the puck command
+    cli/               # main.py dispatches; commands/ mirrors core
   tests/               # with fixtures/ and golden/
   dist/                # generated per-host packages, gitignored
   state/               # task registry, locks, hook log, gitignored; also holds

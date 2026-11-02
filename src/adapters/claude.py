@@ -3,7 +3,7 @@
 from pathlib import PurePosixPath
 
 from adapters.base import PluginAdapter, text_file
-from core.model import Agent, File, HookRule, Skill, ToolMap, frontmatter
+from core.common.model import Agent, File, HookRule, Skill, ToolMap, frontmatter
 
 
 class ClaudeAdapter(PluginAdapter):

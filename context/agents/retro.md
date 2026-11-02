@@ -23,7 +23,7 @@ The task ID and task folder.
 1. Read `findings.md`, `scratch/LOG.md` and `SPEC.md`.
 2. Pick one destination per finding:
    - one-off: stays in `retro.md`.
-   - topic: a `$PUCK_HOME/context/knowledge/wiki/` page with its source, if that folder exists.
+   - topic: if `puck topic list` shows a matching topic, record the source with `puck sources add`, add a page to that topic's `wiki/` citing it as `[sN]`, and run `puck kb lint <topic>` until it passes. Add `status: unverified` frontmatter, since no claim-checker has read it. With no matching topic, keep it in `retro.md`.
    - procedure: for a new skill, run `puck skill new <name> --description "..." --origin <task id>`, write the skill in `$PUCK_HOME/context/skills/<name>/`, add one should-trigger and one should-not-trigger case under its `evals/` folder, and run `puck lint`. Then run `puck proposal add --kind promote --target <name>`.
    - change to an existing skill: write a git diff to a file in the task's `scratch/drafts/`, then run `puck proposal add --kind skill-patch --target <name> --body-file <file>`.
    - project: `puck proposal add --kind project --target <path to AGENTS.md>`.

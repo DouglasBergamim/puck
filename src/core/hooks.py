@@ -16,8 +16,10 @@ import traceback
 from pathlib import Path
 
 import adapters
-from core import build, paths, store, tasks
-from core.model import Event, Result
+from core.common import paths, store
+from core.common.model import Event, Result
+from core.primitives import build
+from core.tools.work import tasks
 
 PAYLOAD_LIMIT = 10_000
 
