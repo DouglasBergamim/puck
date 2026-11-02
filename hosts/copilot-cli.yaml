@@ -1,0 +1,25 @@
+name: copilot-cli
+tier: partial
+manifest: plugin.json
+hook_format: copilot
+agent_format: copilot
+payload: camel
+output: flat
+hook_events:
+  session-start: sessionStart
+  prompt: userPromptSubmitted
+  post-tool: postToolUse
+  pre-compact: preCompact
+  stop: agentStop
+# Tool names are from the hooks docs; confirm in the portability test.
+capabilities:
+  read: [view]
+  search: [bash]
+  shell-read: [bash]
+  shell: [bash]
+  edit: [edit, create]
+  web: [web_fetch]
+  subagents: [task]
+models:
+  fast: fast
+  strong: strong

@@ -1,0 +1,75 @@
+"""The task pack: a small map of existing context relevant to a goal.
+
+It holds paths and one-line summaries, never content, so the model decides what
+to read. `puck task start` prints it, which works on every harness.
+"""
+
+import re
+from pathlib import Path
+
+from cli import lint, store
+
+PACK_LIMIT = 2_000
+STOPWORDS = {
+    "about", "after", "again", "also", "and", "because", "before", "build", "could", "does",
+    "from", "have", "into", "make", "need", "should", "that", "the", "this", "using", "want",
+    "what", "when", "where", "which", "will", "with", "would", "your",
+}
+
+
+def keywords(goal: str) -> set[str]:
+    words = re.findall(r"[a-z0-9]+", goal.lower())
+    return {word for word in words if len(word) >= 3 and word not in STOPWORDS}
+
+
+def _score(words: set[str], text: str) -> int:
+    lowered = text.lower()
+    return sum(1 for word in words if word in lowered)
+
+
+def _skills(root: Path) -> list[tuple[str, str, str]]:
+    found = []
+    for path in sorted((root / "skills").glob("*/SKILL.md")):
+        meta, _ = lint.split_frontmatter(path.read_text())
+        if meta.get("metadata", {}).get("status") == "active":
+            found.append(("skill", str(path), " ".join(meta["description"].split())))
+    return found
+
+
+def _markdown(root: Path, label: str, pattern: str) -> list[tuple[str, str, str]]:
+    found = []
+    for path in sorted(root.glob(pattern)):
+        text = path.read_text(errors="replace")
+        headings = " ".join(re.findall(r"^#+ (.+)$", text, re.MULTILINE))
+        first = next((l for l in text.splitlines() if l.strip() and not l.startswith("#")), "")
+        found.append((label, str(path), f"{path.stem}: {headings} {first}"))
+    return found
+
+
+def _proposals(root: Path) -> list[str]:
+    return [str(path) for path in sorted((root / "proposals").glob("*.md"))]
+
+
+def pack(goal: str, root: Path | None = None) -> str:
+    root = root or store.home()
+    words = keywords(goal)
+    candidates = (_skills(root)
+                  + _markdown(root, "wiki", "knowledge/wiki/**/*.md")
+                  + _markdown(root, "retro", "tasks/retros/*.md"))
+    scored = [(_score(words, f"{path} {text}"), kind, path, text)
+              for kind, path, text in candidates]
+    ranked = sorted((item for item in scored if item[0] > 0), key=lambda item: -item[0])
+    lines = ["Task pack: read only what you need."]
+    size = len(lines[0])
+    for _, kind, path, text in ranked:
+        line = f"- [{kind}] {path}: {text[:120]}"
+        if size + len(line) + 1 > PACK_LIMIT - 200:
+            break
+        lines.append(line)
+        size += len(line) + 1
+    if len(lines) == 1:
+        lines.append("- Nothing relevant found.")
+    pending = _proposals(root)
+    if pending:
+        lines.append(f"- {len(pending)} proposal(s) await the user: `puck proposal list`.")
+    return "\n".join(lines)

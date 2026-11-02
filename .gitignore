@@ -1,0 +1,9 @@
+state/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.puck/
+proposals/done/
+tasks/**/scratch/

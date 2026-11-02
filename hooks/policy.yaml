@@ -1,0 +1,39 @@
+- id: resume
+  event: session-start
+  run: puck hook resume
+  mode: inject
+  timeout_ms: 2000
+  on_failure: open
+  hosts: [claude, copilot-cli, copilot-vscode]
+
+- id: pack
+  event: prompt
+  run: puck hook pack
+  mode: observe
+  timeout_ms: 2000
+  on_failure: open
+  hosts: [claude, copilot-cli, copilot-vscode]
+
+- id: anchors
+  event: post-tool
+  run: puck hook anchors
+  mode: inject
+  timeout_ms: 2000
+  on_failure: open
+  hosts: [claude, copilot-cli, copilot-vscode]
+
+- id: compact-mark
+  event: pre-compact
+  run: puck hook compact-mark
+  mode: observe
+  timeout_ms: 2000
+  on_failure: open
+  hosts: [claude, copilot-cli, copilot-vscode]
+
+- id: close-guard
+  event: stop
+  run: puck hook close-guard
+  mode: block
+  timeout_ms: 2000
+  on_failure: open
+  hosts: [claude, copilot-cli, copilot-vscode]
