@@ -1,39 +1,74 @@
-# Puck: a layer in front of any agent harness
+# Puck design
 
-## Context
+Puck is a layer in front of any agent harness. It optimises the context an LLM gets and improves its tools, for two jobs: coding and planning systems, and learning topics. Claude Code and Copilot are the first adapters, not the scope.
 
-Puck is a layer in front of every agent harness. Its purpose is to optimise all the context an LLM has and to improve its tools. Claude Code and Copilot are the first adapters, not the scope, and any harness should be able to gain one.
+The evidence is in `docs/research/`. What has actually run on each host is in `docs/spikes.md`.
 
-You use it for two jobs: learning topics you care about (search plus good learning skills) and helping you code and plan systems. You asked for deep research first and named context management as the main open question.
+## Main concepts
 
-**Decision: build a layer, not a new agent loop.** The research supports your hunch. Skills, MCP tools and AGENTS.md travel between hosts. Loops, UIs, auth and sandboxes are expensive to rebuild and are already good. Original work should go where hosts are weakest: task continuity, learner state, verification and capturing what each task teaches.
+**A layer, not an agent loop.** Skills, tools and instruction files travel between hosts. Loops, UIs, auth and sandboxes are expensive to rebuild and already good. Puck adds what hosts lack: plans that survive compaction, verification, and capture of what each task teaches. The cost is that it can only influence the loop, caching and compaction through hooks, and that reach varies by host.
 
-**What that gives up:** Puck doesn't own the agent loop, system prompt, prompt caching or compaction. It can only influence them through hooks, and how much varies by host. Exact behaviour across hosts is not a goal.
+**No model proxy.** Extension points can add context but can't trim what the harness sends. A proxy could, but it limits Puck to API-key use, so one gets added only if measured context use justifies it.
 
-**Decision: no model proxy yet.** Extension points can add context and tools, but can't trim what the harness already sends. Only a proxy on model traffic can do that, at the cost of API-key-only use. Puck builds on extension points first. If the question comes back, context use can be measured from host transcripts, and a proxy gets added only if those numbers justify it.
+**History belongs to the host.** Puck keeps no session records. It tracks plans and their steps, and hooks restore a plan from the working directory.
 
-**Decision: history belongs to the host.** Puck keeps no session records, checkpoints or metrics. It tracks what each plan holds and what is done or not, and hooks restore that plan from the working directory. After compaction, exact paths and errors depend on the host's summary: one benchmark found summaries kept 16% of recurring details against 79% for mechanical anchors, so anchors may need to return if plans keep losing detail.
+**`context/` is the source of truth.** Behaviour (instructions, skills, agents, hooks, profile) is linted and built into per-host packages. Data (knowledge, past retros, proposals) only informs a task when it's read.
 
-## Research findings that drive the design
+**Adapters keep hosts apart.** `src/core` knows no harness by name. Each harness gets one pure adapter that renders `context/` at build time and translates hook traffic at run time. The base `Adapter` is the generic harness, so anything reading `AGENTS.md` and `.agents/skills/` works without new code.
 
-Evidence quality varies. Much of it is preprints, vendor reports or small samples, and it is mostly about coding.
+| Host | Tier | Status |
+|---|---|---|
+| Claude Code | Full | Tested in real sessions, including compaction and parallel tasks |
+| Copilot CLI | Partial | Built, not yet run. No post-compact event, so it relies on the always-on rule to run `puck task show` |
+| Copilot in VS Code | Partial | Built, not yet run. Its hooks are in Preview and ignore matchers |
+| Any other harness | Content | Skills and instructions only, with no hooks |
 
-| Finding | Design consequence |
+**Primitives.** Ask these in order, and the first yes wins.
+
+| Question | Primitive |
 |---|---|
-| No open harness in an 11-system source study retrieves code with embeddings (Barbaste 2026) | Start with grep; no vector database |
-| Summaries kept 16% of recurring details, mechanical anchors 79% (Compact-Bench, Oct 2026) | Keep the plan on disk and restore it; anchors were built and removed to leave history to the host |
-| Models under-use optional retrieval (Vercel: skills uninvoked in 56% of cases; Fan: recall tool unused in 36 of 64 settings) | Critical context is injected or in instruction files, not left to the model to fetch |
-| Generated AGENTS.md files lowered success and raised cost 20%+ (Gloaguen) | Hand-written, under 100 lines, non-obvious facts only |
-| Iterated LLM memory updates "round off" facts (secondhand) | Standing-context changes must be reviewable diffs |
-| A concrete external checklist passed 10/10, generic self-check 5/10 (Xue, small sample) | Verification by checklist, in a separate agent or script |
-| Unstructured AI raised practice scores but lowered later exam scores (Bastani); delegating scored 24-39%, conceptual inquiry 65-86% (Shen & Tamkin, small cells) | Attempt first; explicit learn vs build modes |
-| Pure refusal drove students away (Khanmigo); prompts alone didn't hold tutoring order (Kestin) | Friction is adjustable; real tests happen outside the chat |
-| Citation accuracy 39-77% with link validity above 94%; accuracy fell as tool calls rose (arXiv 2605.06635) | Claim-level check, not more fan-out |
-| FSRS beats SM-2 for 99.6% of users (project-run benchmark); LLM flashcards 36-52% unusable | py-fsrs, with human approval of every card |
-| No controlled evidence that SDD frameworks or TDD rituals pay off | One-page SPEC.md with acceptance checks |
-| MCP Sampling and Roots deprecated (2026-07-28); MCP can't inject context or intercept tools | MCP is for tools only |
-| Hooks have no shared standard; VS Code warns that sharing a file doesn't make hooks compatible | Normalised hook entry point, per-host shims, capability tiers |
-| Subagents get a fresh window and return only a summary; some built-in ones skip CLAUDE.md | Agent docs carry their own rules and a fixed return format |
+| Must it happen every time, whatever the model decides? | Hook |
+| Can a program compute it exactly? | CLI command or skill script |
+| Is it a short rule true in nearly every session? | Instruction |
+| Is it a repeatable procedure needed only sometimes? | Skill |
+| Is it noisy, or does it need fresh eyes or fewer tools? | Agent |
+| Is it a fact needed only for one procedure? | Skill `references/` |
+| Is it study material? | Knowledge |
+| Does it only matter to this task? | Task file, or scratch for experiments |
+
+**Context tiers.** The host owns the window. Puck owns what enters it and what survives it.
+
+| Tier | Contents | Budget | Loaded by |
+|---|---|---|---|
+| Always-on | `instructions/global.md`, `profile.md` | 6,000 characters | `resume` hook, or `AGENTS.md` on the generic harness |
+| Listings | Skill and agent descriptions | 1,024 characters each | Host |
+| Injected | Open plan checklist | 10,000 characters per hook payload | `resume` hook, at session start and after compaction |
+| On-demand | Skill bodies, references, wiki pages | Read only when needed | The agent |
+| Task state | `SPEC.md`, `progress.json`, findings, scratch log | Pointer until needed | The agent |
+
+**Task loop.** The main session follows the `task` skill and owns the whole workflow. Quick questions and one-line fixes don't open a task.
+
+1. **Start.** `puck task start` opens a task folder and prints a task pack: paths and one-line summaries of relevant skills, wiki pages and past retros, capped at 2,000 characters.
+2. **Plan.** The agent fills in `SPEC.md` and adds steps, each with a check command.
+3. **Work.** Findings go through `puck note`, and uncertain ideas are tried in scratch.
+4. **Verify.** `puck task check` runs each check, and only a real exit 0 passes a step. Non-trivial changes also get the `reviewer` agent.
+5. **Retro.** With findings, a fresh `retro` agent classifies them, and `puck task close` refuses to finish without its output.
+6. **Close.** The retro is archived and proposals go to you as one short list. If the agent forgets to close, the `close-guard` hook blocks once to remind it.
+
+**Capture.** Risk decides how each finding lands. Standing instructions never change without your approval.
+
+| Finding | Destination | How it lands |
+|---|---|---|
+| One-off | Task retro | Automatic |
+| Fact about a topic | `knowledge/` wiki page with its source | Automatic |
+| New procedure | Skill with status `draft`, which no build includes | Draft is automatic; promotion needs approval, then runs lint, evals, build and commit |
+| Change to a skill | Patch in `proposals/` | Approval |
+| Fact about a project | That project's `AGENTS.md` | Approval |
+| Rule for all your work | `instructions/global.md`, checked against its budget | Approval |
+
+**Parallel work.** The host runs the agents, and Puck keeps them from colliding. There's no global active task: hooks and commands find the plan from the working directory, so each worktree from `puck task start --worktree` sees only its own. Shared writes go through file locks. Merging stays your decision.
+
+**Not built yet:** the `kb`, `learn` and `research` skills, the `researcher` and `claim-checker` agents, spaced repetition, external search, an MCP server and cross-host memory.
 
 ## Architecture
 
@@ -43,490 +78,108 @@ Solid lines are build and runtime paths. Dotted lines are the capture loop.
 flowchart TB
     you(["You"])
 
-    subgraph behaviour["context/ behaviour: built and installed"]
-        instructions["instructions/"]
-        skills["skills/"]
-        agents["agents/"]
-        hooks["hooks.yaml"]
+    subgraph behaviour["context/ behaviour"]
+        rules["instructions/ and profile.md"]
+        skills["skills/: task, plan, review"]
+        agents["agents/: reviewer, retro"]
+        hookrules["hooks.yaml: resume, close-guard"]
     end
 
-    adapters["src/adapters/: deterministic transforms"]
+    adapters["src/adapters/: one pure transform per harness"]
+    build["puck build: lint, then render"]
+    dist["dist/: claude, copilot-cli, copilot-vscode, generic"]
 
-    build["puck build"]
-    dist["dist/ per-host packages"]
-
-    subgraph hostlayer["Hosts"]
-        claude["Claude Code: Full tier"]
-        copilotcli["Copilot CLI: Partial"]
-        vscode["Copilot in VS Code: Partial"]
+    subgraph hosts["Hosts"]
+        claude["Claude Code: Full"]
+        copilot["Copilot CLI and VS Code: Partial"]
+        generic["Any other harness: Content"]
     end
 
-    subgraph runtime["Task agent: main session running the task skill"]
-        start["Start: open task, build task pack"]
-        work["Work: load context, iterate, note findings"]
-        verify["Verify: checks and reviewer"]
+    subgraph loop["Task loop: main session running the task skill"]
+        start["Start: task folder and task pack"]
+        work["Plan and work: steps, notes, scratch"]
+        verify["Verify: puck task check, reviewer"]
         retro["Retro agent: classify findings"]
-        start --> work --> verify --> retro
+        finish["Close: archive retro"]
+        start --> work --> verify --> retro --> finish
     end
 
-    cli["puck CLI: src/core and src/cli"]
+    cli["puck CLI: src/cli and src/core"]
 
-    subgraph project["Each project: .puck/ excluded from git"]
-        taskfiles["SPEC, progress, findings"]
-        scratch["scratch/ disposable"]
+    project[".puck/ in each project: task folders, worktrees"]
+    state["state/: task registry, locks, hook log"]
+
+    subgraph data["context/ data"]
+        knowledge["knowledge/: not created yet"]
+        archive["tasks/: past retros"]
+        proposals["proposals/: waiting for your OK"]
     end
-
-    subgraph data["context/ data: read on demand"]
-        knowledge["knowledge/ study material"]
-        profile["profile.md"]
-        proposals["proposals/ waiting for your OK"]
-        retros["context/tasks/ past retros"]
-    end
-
-    state["state/ task registry, gitignored"]
 
     behaviour --> build
     adapters --> build
     build --> dist
-    dist --> hostlayer
-    you --> hostlayer
-    hostlayer --> runtime
-    hostlayer -- "hooks fire" --> cli
-    runtime -- "commands" --> cli
+    dist --> hosts
+    you --> hosts
+    hosts --> loop
+    hosts -- "hooks fire" --> adapters
+    adapters -- "normalised events" --> cli
+    loop -- "commands" --> cli
     cli --> project
     cli --> state
-    cli --> data
+    cli -- "task pack, retro archive" --> data
 
     retro -. "skill drafts" .-> skills
-    retro -. "facts" .-> knowledge
-    retro -. "project and global rules, promotions" .-> proposals
-    proposals -. "one list at task close" .-> you
+    retro -. "topic facts" .-> knowledge
+    retro -. "rules, patches, promotions" .-> proposals
+    proposals -. "one list at close" .-> you
     you -. "approve" .-> behaviour
 ```
 
-- **Adapters:** `context/` is the single source of truth. Each harness gets one pure adapter in `src/adapters/` that transforms it at build time and translates hook traffic at run time. Adapters use no files, network, clock, environment or LLM, so the same input gives byte-identical output. `src/core` knows no harness by name, and adding a harness needs no core change.
-- **Generic harness:** the `Adapter` base class emits `AGENTS.md` plus `.agents/skills/`, so any harness reading those gets Content tier with no new code.
-- **Packaging:** a Claude Code plugin is the primary target, since it carries skills, agents, hooks and MCP. Copilot uses its legacy plugin format.
-- **Core and CLI:** one Python library. Hooks and skills call the CLI, which needs no extra host support. A thin stdio MCP server arrives only when a model-facing tool is needed. It will use explicit parameters and no Sampling, Roots or server-initiated requests.
-
-**Language: Python with uv.** It's the most used language in your projects, the MCP SDK is Tier 1, py-fsrs exists, and uv is installed.
-
-**Hosts and tiers.** Copilot CLI and Copilot in VS Code are two separate hosts, tested separately. Codex and others wait until these work.
-
-| Host | Tier | Why |
-|---|---|---|
-| Claude Code | Full | `PreCompact`, compact `SessionStart` and blocking `Stop` exist |
-| Copilot CLI | Partial until proven | No documented compact `sessionStart` or post-compact event; `preCompact` output is ignored |
-| Copilot in VS Code | Partial | Hooks are in Preview and ignore matchers |
-| Others | Content-only | Skills and instructions only |
-
-### Repo layout
+## Folder structure
 
 ```
 puck/
-  AGENTS.md  README.md  pyproject.toml
-  docs/        # design, spikes, research; never read by the runtime
+  AGENTS.md  README.md  pyproject.toml  uv.lock
+  assets/              # logo
+  context/             # source of truth for everything the LLM sees
+    instructions/      # global.md, the always-on rules
+    profile.md         # hand-written facts about you
+    skills/            # task, plan, review; each has SKILL.md and evals/
+    agents/            # reviewer, retro
+    hooks.yaml         # resume, close-guard
+    templates/         # SPEC, skill, agent, retro
+    knowledge/         # study material; not created yet
+    tasks/             # archived retros; created at first close
+    proposals/         # changes waiting for your OK; done/ is gitignored
+  docs/
+    design.md          # this file
+    spikes.md          # what's been tested on each host
+    research/          # evidence behind the design
   src/
-    core/      # harness-neutral: model, paths, tasks, context, hooks, build, lint
-    adapters/  # one pure transform per harness; base.py is the generic harness
-    cli/       # the puck command
-  context/     # the source of truth for everything the LLM sees
-    instructions/  skills/  agents/  hooks.yaml  templates/  profile.md
-    knowledge/     # study material, created in milestone 3
-    tasks/         # past retros
-    proposals/     # changes waiting for your OK
-  tests/       # including fixtures/ and golden/
-  dist/        # generated, gitignored
-  state/       # task registry and locks, gitignored
+    core/              # harness-neutral
+      build.py         # load context, run adapters, write dist/
+      context.py       # task pack
+      hooks.py         # hook entry point and handlers
+      lint.py          # checks on primitives and budgets
+      model.py         # shared types
+      paths.py         # the folder layout
+      scratch.py       # experiments and cleanup
+      skills.py        # skill lifecycle and proposals
+      store.py         # locked, atomic writes
+      tasks.py         # tasks, steps, checks and close
+    adapters/          # base.py is the generic harness; claude.py, copilot.py
+    cli/               # main.py, the puck command
+  tests/               # with fixtures/ and golden/
+  dist/                # generated per-host packages, gitignored
+  state/               # task registry, locks, hook log, gitignored; also holds
+                       # task folders for work outside a git repository
+
+<project>/.puck/       # excluded through .git/info/exclude
+  tasks/<id>/
+    SPEC.md            # goal, decisions, non-goals, acceptance checks
+    progress.json      # machine-updated step state
+    findings.md        # appended by puck note
+    retro.md           # written at close, copied to context/tasks/
+    scratch/           # LOG.md, experiments/, drafts/, outputs/
+  worktrees/<id>/      # created by puck task start --worktree
 ```
-
-`context/` holds behaviour and data side by side. Behaviour (`instructions/`, `skills/`, `agents/`, `hooks.yaml`, `profile.md`) is built into `dist/`, and it's linted, evaluated and gated. Data only informs a task when it's read, so wiki pages can land automatically.
-
-**`knowledge/` holds study material only:** sources, wiki notes and flashcards for topics you're learning. It can be opened as an Obsidian vault. Facts tied to a procedure live in that skill's `references/`, so they load with the skill and stay out of the skill listing.
-
-`src/core`, `src/adapters` and `src/cli` are three top-level Python packages, and `uv tool install --editable .` puts `puck` on your PATH.
-
-**Everything personal lives in this one repo.** `PUCK_HOME` can point elsewhere, and otherwise Puck finds the repo from its own source path. Your existing vault at `~/Documents/StudyNotes/TheTruth` is left untouched, and notes can be imported later. The repo stays local by default, and any remote must be private.
-
-Active work in a code project lives in `<project>/.puck/`, which is added to `.git/info/exclude`, so it never touches the project's commits or `.gitignore`. Keeping it inside the project means scratch code can import project modules and writes stay inside the host's working directory. Tasks outside a git repository live in `state/tasks/`. The finished retro is copied to `context/tasks/`, so past tasks stay searchable across projects.
-
-## Execution flow
-
-**The task agent owns the whole workflow, and you never run a retro yourself.** The task agent is the main session following the `task` skill, not a subagent. The main session keeps the conversation with you and can spawn workers, which a nested subagent may not be able to do on every host.
-
-```
- 1. start ──── size the request; open a task; build the task pack
- 2. work ───── load what's needed; iterate in scratch; note findings
- 3. verify ─── run the acceptance checks; reviewer for non-trivial changes
- 4. retro ──── automatic: fresh retro agent classifies findings
- 5. capture ── safe outputs are written; the rest are proposed to you in one list
-```
-
-1. **Start.** Quick questions and one-line fixes don't open a task. Otherwise `puck task start "<goal>" --type build|learn|research|plan` creates the task folder and builds a task pack: relevant skills, KB pages, past retros and pending proposals, found with ripgrep over names, descriptions and headings. The pack holds paths and one-line summaries, not content, capped at 2,000 characters.
-2. **Work.** The agent reads what the pack points to and hands off to `plan`, `learn`, `research` or `kb` as needed. Anything non-obvious goes through `puck note`.
-3. **Verify.** Each acceptance check needs its command and output. Non-trivial changes also get the `reviewer` agent.
-4. **Retro.** The task agent spawns the `retro` agent with the task folder. A fresh context keeps this out of the main window and stops the working session grading itself. With no findings, it writes one line and stops, so small tasks cost little. The always-on rules say to do this. A stop hook acts as a safety net if the agent forgets.
-5. **Capture.** What happens depends on the risk of each change:
-
-| Finding | Destination | How it lands |
-|---|---|---|
-| One-off | Task retro | Automatic |
-| Fact about a topic | `knowledge/` wiki page with source | Automatic, uncommitted; never loaded as rules |
-| Repeatable procedure, or a fact tied to one | New skill, or a change to a skill or its `references/` | Automatic as a `draft`, which no session loads |
-| Fact about a project | That project's AGENTS.md or an ADR | Proposal |
-| Rule for all your work | `instructions/global.md`, checked against its cap | Proposal |
-| Promoting a skill to `active` | `puck skill promote` | Proposal |
-
-Proposals close the task as one short list in the same conversation, and you answer in plain language. Anything unanswered stays in `proposals/` and appears in the next task pack. Standing instructions still can't change without you, because that's where unreviewed writes do the most harm. Everything else stays out of your way.
-
-## Parallel work
-
-Puck supports parallelism at two levels. The host runs the agents, and Puck keeps them from colliding.
-
-| Level | Example | Who runs it | Isolation |
-|---|---|---|---|
-| Workers inside a task | Three researchers, or a reviewer beside the task agent | Host subagents | Read-only workers share the checkout; writers each get a worktree |
-| Several tasks at once | Auth fix in one terminal, a study session in another, on any mix of hosts | You open each session | Each coding task gets its own git worktree |
-
-**Sessions and tasks**
-- There's no global "active task". Hooks and commands find a plan from the working directory, so each worktree sees only its own.
-- `puck task start --worktree` creates a branch and worktree for the task, and you open a session there. Tasks on separate topics or read-only work don't need one.
-- `puck task list` shows every open task with its worktree and step status.
-- Each task runs its own retro and raises its own proposals. Puck never merges branches; merging stays your decision.
-
-**Shared files**
-- `PUCK_HOME` can receive writes from several sessions, and all of them go through the CLI, which takes a file lock.
-- Proposals, retros and drafts are one file each with unique names, so they can't overwrite each other.
-- A change to an existing skill is stored as a patch in `proposals/`, never written straight into `skills/`. Two tasks can both suggest changes, and the second one surfaces any conflict at review.
-- Appends to `findings.md`, `LOG.md` and `log.md` are locked, because workers can write at the same time. `index.md` is regenerated rather than edited.
-- Git commits in this repo are serialised by the same lock.
-
-**Limits:** fan-out defaults to at most 5 workers per task, because each one costs about as much as a full agent. Worker counts are capped in the skill, and nested fan-out is not used.
-
-## Primitive specifications
-
-### Which primitive to use
-
-Ask these in order. The first yes wins.
-
-| Question | Primitive |
-|---|---|
-| Must it happen every time, whatever the model decides? | Hook or CLI code |
-| Can a program compute it exactly? | CLI command or skill script |
-| Is it a short rule true in nearly every session? | Instruction |
-| Is it a repeatable procedure needed only sometimes? | Skill |
-| Is it noisy, or does it need fresh eyes or fewer tools? | Agent |
-| Is it a fact needed only for one procedure? | Skill `references/` |
-| Is it study material on a topic you're learning? | Knowledge |
-| Does it only matter to this task? | Task file |
-| Is it an experiment or draft? | Scratch |
-
-Slash commands are not a separate primitive. A skill with `invocation: user` covers them on every host.
-
-`puck lint` enforces everything below, using `templates/` as the starting point for each type.
-
-### Instruction doc
-
-Sources are `context/instructions/global.md` (all work) and each project's AGENTS.md. Plugin harnesses get the rules from the session-start hook, and the generic harness gets `AGENTS.md`.
-
-- Under 100 lines and within the always-on budget, with the task and retro rule at the top.
-- Hand-written, or changed only through an approved proposal.
-- Each line must pass one test: would the agent get this wrong without it?
-- No codebase overviews, no style rules a linter can check, no generated summaries.
-- Project AGENTS.md holds build and test commands, unusual conventions, and pointers into `docs/`.
-
-### Skill
-
-```
-skills/<name>/
-  SKILL.md        # entry point, loaded on use
-  references/     # read only when SKILL.md says so; one level deep
-  scripts/        # deterministic helpers
-  assets/         # templates
-  evals/          # eval cases, moved by the adapter; never installed
-```
-
-```markdown
----
-name: review
-description: >-
-  Review a change against its SPEC.md and report defects with evidence.
-  Use when a non-trivial change is ready. Not for style or planning.
-metadata:
-  version: "3"
-  status: active            # draft | active | retired
-  invocation: model         # model | user
-  requires: "subagents"     # shell, subagents, web
-  origin: "2026-11-03-auth-fix"
-  last_evaluated: "2026-11-05"
----
-## Procedure
-1. ...
-
-## Output
-...
-
-## Done when
-- [ ] ...
-
-## If something fails
-...
-
-## Host differences
-Read references/host-tools.md if a named capability is unclear.
-```
-
-- `description` says what it does, when to use it and when not to. It's the only part loaded on every turn, so it's written for matching and kept under 1,024 characters.
-- Only standard frontmatter is used. Puck's extras sit in `metadata` as strings, and `build` converts them to host fields such as `disable-model-invocation`.
-- The procedure comes first, because compaction can keep only the start of a skill.
-- Bodies target 150 lines, with a hard limit of 500. Longer material moves to `references/`.
-- Text names capabilities and `puck` commands, never host tool names or variables like `${CLAUDE_SKILL_DIR}`.
-- "Done when" is a concrete checklist, since generic self-checks did much worse.
-
-**Lifecycle:** `draft` (excluded from builds) → `active` → `retired` (excluded, kept in git). `skills/` is the only source of truth; `dist/` and installed copies are never edited. New skills get one should-trigger and one should-not-trigger eval case from the task that produced them. The retro prefers updating an existing skill over adding a near-duplicate. Web text is summarised, never copied in.
-
-`puck skill try <name>` loads a draft into one session through a temporary plugin (`claude --plugin-dir`) without installing it. `puck skill promote <name>` runs lint and evals, builds, installs and commits, so approving a promotion approves that commit.
-
-### Agent doc
-
-```markdown
----
-name: reviewer
-description: Fresh-context review of a change against its SPEC.md.
-tools: [read, search, shell-read]   # capabilities, mapped per host
-model: strong                       # fast | strong, mapped per host
-max_turns: "20"
----
-## Role
-One sentence.
-
-## You receive
-SPEC path, diff range, task folder.
-
-## Rules
-Everything it needs, restated. Assume it sees no instruction files.
-
-## Process
-1. ...
-
-## Boundaries
-Don't edit files. Skip style. No finding without a failure path.
-
-## Return
-At most 1,500 tokens in this exact format, with details in a file:
-- verdict: pass | fail
-- findings: location, failure path, severity
-- evidence_path:
-```
-
-- An agent exists only for isolation, fresh eyes or restricted tools. A persona alone isn't a reason.
-- It gets the fewest capabilities that work. `researcher` has no shell.
-- Rules are restated, because a subagent may not see the instruction files.
-- The return format is fixed, because that summary is all the caller sees.
-- Non-trivial output goes to a file, and the caller gets the path.
-- The delegation prompt must give an objective, output format, tool guidance and boundaries.
-
-**v1 agents:** `reviewer`, `retro`, `researcher`, `claim-checker`. Host support for depth and tool limits differs, so skills declare `requires: subagents`. Hosts without it run the same steps inline.
-
-### Hook
-
-Canonical definitions live in `context/hooks.yaml`. A hook runs on any adapter that has its event:
-
-```yaml
-- id: close-guard
-  event: stop               # session-start | stop
-  run: puck hook close-guard
-  mode: block               # observe | inject | block
-  timeout_ms: 2000
-  on_failure: open
-```
-
-Each host shim converts its payload to one normalised event on stdin, and maps the result back:
-
-```json
-{"event": "stop", "host": "claude", "cwd": "...", "already_forced": false}
-```
-```json
-{"context": null, "decision": null, "reason": null}
-```
-
-Rules:
-- No LLM calls and no network.
-- Observers finish within 500 ms, and nothing exceeds 5 seconds.
-- Silent on success. Errors go to a log.
-- Idempotent, and writes only under `state/` or `.puck/`.
-- Any single payload stays under 10,000 characters.
-- Fails open unless stated. Hooks are helpers, not a security boundary.
-- Generated hook files stay stable, and all logic lives in the CLI. Host formats change, and some hosts re-trust hooks when the file changes.
-
-| Hook | Event | Does | Claude Code | Copilot |
-|---|---|---|---|---|
-| `resume` | session-start, including after compaction | Injects the always-on rules and the checklist of any open plan for this directory | Yes | Session start only; Copilot has no post-compact event |
-| `close-guard` | stop | Open task with all checks passing: blocks once, asking the agent to run the retro and close | Yes | Documented, untested |
-
-`close-guard` records one nudge per task, so it can't loop, and ordinary chats with no open task are unaffected.
-
-### CLI commands
-
-The CLI is the tool surface for skills, hooks and agents. Commands take the form `puck <noun> <verb>`.
-
-- `--json` for structured output and meaningful exit codes.
-- Quiet on success, specific on failure, saying what to do next.
-- Output is bounded: anything over about 4,000 characters goes to a file, and the command returns the path plus head and tail.
-- Absolute paths everywhere.
-- State changes go through commands where possible, so the agent doesn't hand-edit `progress.json`.
-
-### Task folder
-
-```
-.puck/tasks/2026-11-03-auth-fix/
-  SPEC.md          # goal, decisions, non-goals, acceptance checks
-  progress.json    # machine-updated step state
-  findings.md      # appended by puck note
-  retro.md         # written at close, copied to context/tasks/
-  scratch/         # disposable, see below
-```
-
-`progress.json`:
-
-```json
-{"schema": 1, "goal": "...", "type": "build", "status": "open",
- "steps": [{"id": "s1", "desc": "...", "check": "uv run pytest tests/auth",
-            "passes": false, "evidence": null}]}
-```
-
-Findings use one line each, and the type sets the destination:
-
-```
-- [procedure] Run migrations before seeding (source: scripts/seed.py:12)
-```
-
-Types are `procedure`, `topic`, `project`, `rule` and `one-off`. `puck task show` prints the plan as a checklist of what's done and what isn't.
-
-### Scratch space
-
-Yes, Puck should have one. The model needs somewhere to test ideas without touching real code or filling the context window.
-
-```
-.puck/tasks/<id>/scratch/
-  LOG.md
-  experiments/001-try-fts5/    # script, input, output
-  drafts/                      # documents and skills being iterated
-  outputs/                     # large command output
-```
-
-`puck scratch new <name>` creates an experiment folder, and non-project tasks get the same structure.
-
-**Iteration loop**, borrowed from autoresearch's fixed-metric, keep-or-revert design:
-1. State a hypothesis and how you'll measure it.
-2. Run it in a new experiment folder.
-3. Add one line to `LOG.md`: hypothesis, command, result, keep or discard.
-4. After three failed attempts on one problem, stop and rethink or ask you.
-
-**Rules:**
-- Real code never imports from scratch, and a final result can't depend on it.
-- Anything worth keeping is moved deliberately into the project, or noted as a finding before close.
-- Large output goes to `outputs/`, keeping only a summary in context.
-- No secrets. `.puck/` is excluded from git, but it's still plain files.
-- `puck gc` deletes scratch 14 days after a task closes. Experiments touching tracked files use a git worktree instead.
-
-`LOG.md` gives the retro a record of what failed, which is often the most valuable finding. After compaction, the agent can re-read it instead of repeating an experiment.
-
-## Context management
-
-The host owns the window. We own what enters it and what survives it.
-
-| Tier | Contents | Budget | Loaded by |
-|---|---|---|---|
-| Host-owned | Prefix, caching, compaction | Not ours | Host |
-| Always-on | Hand-written rules and `profile.md` | About 6,000 characters | `resume` hook, because plugins can't carry instruction files; `AGENTS.md` on the generic harness |
-| Listings | Skill and agent descriptions | Under 1,024 characters each; total tracked by lint | Host |
-| Injected | Open plan checklist | Any single hook payload under 10,000 characters | Hooks |
-| On-demand | Skill bodies, references, wiki pages | Each read bounded | Skills, `puck kb` |
-| Task state | SPEC.md, progress.json, findings, scratch log | Pointer only until needed | Files |
-| Archive | Host transcripts, raw sources, past retros | Never loaded whole | Searched on request |
-
-1. **The plan lives on disk.** New sessions and compacted sessions start from the task folder, not from a summary.
-2. **The harness keeps the history.** Transcripts, compaction and session records are the harness's job.
-3. **Restoring the plan differs by host.** Claude Code gets the checklist back through compact `SessionStart`. Copilot has no post-compact event, so it relies on the always-on rule to run `puck task show`.
-4. **Parallel plans stay apart by directory.** Hooks use the nearest open plan to the working directory, so a worktree's plan beats its repository's. Two plans in one directory are both shown.
-5. **No custom memory system at first.** Claude Code's auto memory stays on. It's unreviewed and Claude-only, which is why the cross-host version is planned for phase 2. That step needs `autoMemoryEnabled: false`, a global setting, so you decide then.
-6. **Retrieval has a measured upgrade path:** ripgrep, then SQLite FTS5, then qmd, each only when a labelled set of about 30 queries shows misses.
-
-## Features
-
-**Learning**
-- `kb` skill follows Karpathy's LLM Wiki: immutable `raw/`, agent-owned `wiki/`, `index.md`, `log.md`, and ingest, query and lint operations. Every wiki claim links to a raw source.
-- `learn` skill runs diagnose goal → your attempt → feedback → concept update, grounded in wiki and raw sources, with an adjustable friction level. **This is friction, not enforcement,** because the model can always answer anyway.
-- Real enforcement sits outside the chat. `puck srs review` (phase 2) is a plain terminal session with self-grading and no LLM. Mastery comes from FSRS retrievability, not chat performance.
-- Cards are files in `knowledge/`. The agent drafts and you approve. **This deviates from the research's "Anki first" suggestion,** because Anki isn't installed and self-grading avoids an unvalidated free-text grader. Cost: no mobile review; `genanki` export can add it later.
-
-**Research**
-- `research` skill runs clarify → plan with an effort cap → 3-5 scoped researchers → URL check script → fresh claim-checker marking each claim supported, partial or unsupported → report separating facts, inference and gaps.
-- Starts on each host's native search. Exa with Jina Reader (behind a swappable interface) and OpenAlex come in phase 2, since no benchmark has a clear winner.
-
-**Coding and planning**
-- `plan` skill: interview, then a one-page SPEC.md with decisions, non-goals and acceptance checks. Implementation starts in a fresh session.
-- `review` skill: read-only reviewer with fresh context, judging against SPEC.md. Each finding needs a location and a failure path.
-- Verification rule: claims of done need the command and its output. A bug fix needs a failing reproduction test. Test-first rituals are not mandated.
-
-**Safety**
-- Credentials are protected by native deny rules plus shell-less researchers. Hooks are not a boundary: timeouts fail open on both hosts, and Bash can evade path matching.
-- Third-party skills are read before use and pinned. API keys come from the macOS Keychain or environment, never repo files.
-
-## Milestones
-
-Evals run from the first skill. **Stop and reassess after milestone 3.**
-
-### Phase 1: prove the idea
-1. **Skeleton:** rename the folder to `puck` (reopening Claude Code there, since the working directory changes), uv project, `git init` in the repo, research saved to `docs/research/`, templates, `puck lint`, generator, Claude plugin, instruction files, hook shim, session-keyed checkpoints and state, CLI file locking. You'll need to install the Copilot CLI, since the `copilot` shim reports it missing. Spikes:
-   - Copilot post-compact workaround
-   - whether Copilot's `agentStop` can block
-   - legacy plugin format
-   - duplicate skills from dual directories
-   - user-level install and instruction paths on each host
-   - how quickly a rebuilt skill reaches a new session
-   - whether `puck` can write to `PUCK_HOME` from inside a host sandbox, and which allow rules that needs
-   - how hook payloads identify subagents, and whether their events keep the parent session ID on each host
-   - whether host worker isolation (worktrees) is available on Copilot
-2. **Task loop:** `task`, `plan`, `review`, `retro` agent, stop guard, task pack, scratch, proposals, `puck skill` commands, `--worktree`, `puck task list`. **Proof:** two tasks run at once on Claude Code and Copilot CLI in separate worktrees without interfering. One real task survives forced compaction on Claude Code (and Copilot CLI if the workaround holds), the task agent runs the retro without being asked, you approve a promotion in chat, and a new session on a different host loads the skill.
-3. **Learning loop:** `kb`, `research` on host search, `learn`, `knowledge/` setup. **Proof:** you study one real topic end to end.
-
-### Phase 2: only where phase 1 shows the need
-4. **Spaced repetition:** py-fsrs, card flow, review CLI. First in line, since retrieval and spacing have the strongest evidence here.
-5. **Search:** Exa, Jina and OpenAlex adapters, plus the MCP server.
-6. **Cross-host memory:** a capped index, proposals with source and date, a manual consolidation skill that produces a diff. Web-derived text can't enter unreviewed. Manual because headless jobs are risky (see Risks).
-7. **Decision records and pruning:** `adr` skill, then delete anything with no measured lift.
-8. **Background tasks:** `puck task spawn` starts a headless host session in a new worktree, so you don't have to open each one. It needs pinned flags, a budget cap and a machine-checkable stop condition.
-
-## Deliberately out of scope
-
-- **Own agent loop.** If hooks prove too weak, Pi is the next step: MIT, multi-provider, and its extensions can replace compaction. The core library carries over.
-- Vector or graph memory, unattended Ralph-style loops, cross-harness delegation via ACP, second-model review, and hosts beyond Claude Code and Copilot.
-
-## Risks
-
-- **Subscription terms and `--bare`.** Launch unmodified `claude` and `copilot` binaries only. `--bare` skips hooks and config, ignores OAuth, and docs say it will become the default for `-p`. Any headless job must pin its flags.
-- **The automatic retro may cost more than it returns.** The no-findings exit limits this, and milestone 2 logs its token use. If proposals turn into noise, tighten what counts as a finding.
-- **Parallel cost and review load.** Five workers cost roughly five times as much, and several tasks mean several branches for you to merge. Limits are conservative at first, and milestone 2 logs token use per task.
-- **Skill sprawl.** Easy capture can bloat the listing every session pays for. Drafts stay out of builds, the retro prefers updates, and `/skill-doctor` plus evals show what to retire.
-- **Copilot may stay Partial.** It would still get skills, instructions, agents and resume-from-files, but the retro would rely on the always-on rule.
-- **Skills may not trigger.** Evals check triggering, and critical rules live in instruction files.
-- **Personal data beside code.** Publishing the code later would need a split or history rewrite. Keeping data in its own top-level folders makes that split straightforward.
-- **Global settings.** Deny rules, `PUCK_HOME`, an allow rule for `puck` and `autoMemoryEnabled` change behaviour outside this project. The installer shows each change first.
-- **Learning-session compaction is unproven.** The evidence comes from code tasks, so milestone 3 tests it directly.
-
-## Verification
-
-The research came from documents, and the design review checked host behaviour against docs and `--help` only. Nothing has run on a host yet, and the format details here are unbuilt proposals, so milestone 1 is where these assumptions get tested.
-
-- **Unit tests:** `uv run pytest` covering plan lookup by directory, task pack ranking and cap, event normalisation per host, close-guard's one-attempt limit, scratch cleanup, FSRS scheduling and generator output.
-- **Concurrency test:** many processes write notes and proposals at once, with nothing lost or corrupted.
-- **`puck lint`:** validates every skill, agent, hook and instruction doc, and fails on a host tool name in skill text.
-- **Budget test:** fails if always-on content or any single hook payload passes its limit.
-- **End-to-end flow:** start a task from a code project outside this repo, confirm the pack lists relevant context, run an experiment in scratch, finish the task, and confirm the retro runs unprompted, proposals appear once, and an approved skill loads in a new session on another host. Reverting that commit and rebuilding must remove it.
-- **Portability:** the same prompt on each host must show the injected plan and run `puck task show`, in Copilot CLI and VS Code separately.
-- **Compaction continuation:** run a real task, force `/compact`, confirm the task continues correctly. This tests continuation, not summary quality.
-- **Skills:** `claude plugin eval` (available in the installed v2.1.316) with `--runs 1` while drafting and three runs for a decision. Cases are 5-10 real tasks, including a should-not-trigger case. It mocks MCP by default, so test real tool calls separately.
-- **Learning outcome:** paired topics, one with the skill and one without, with an unaided quiz at 7 and 30 days.
-- **Research quality:** check citation accuracy on a small set of reports by hand against fetched sources.
