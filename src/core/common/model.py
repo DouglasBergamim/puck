@@ -33,6 +33,16 @@ class Skill:
 
 
 @dataclass(frozen=True)
+class Stage:
+    """One stage of a lead's workflow: what it loads, what it delivers, what proves it."""
+
+    stage: str
+    delivers: str
+    skill: str = ""
+    check: str = ""
+
+
+@dataclass(frozen=True)
 class Agent:
     name: str
     description: str
@@ -43,6 +53,7 @@ class Agent:
     mode: str = "worker"  # lead: the user talks to it; worker: a skill or lead starts it
     skills: tuple[str, ...] = ()
     agents: tuple[str, ...] = ()
+    workflow: tuple[Stage, ...] = ()
 
 
 @dataclass(frozen=True)

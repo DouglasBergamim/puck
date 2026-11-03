@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Fresh-context review of a code change against its SPEC.md or stated requirement.
+description: Fresh-context review of a change against its SPEC.md or stated requirement. Use when the review skill sends it a change, a diff range and the requirement.
 tools: [read, shell-read]
 model: strong
 max_turns: "20"
@@ -28,6 +28,7 @@ Don't edit project files. Skip style. Don't report something you couldn't trace 
 
 ## Return
 At most 1,500 tokens in this exact format:
+- status: complete | partial | blocked
 - verdict: pass | fail
 - findings: location, failure path, severity
 - evidence_path:

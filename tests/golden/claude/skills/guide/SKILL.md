@@ -7,11 +7,14 @@ Take the role of the Puck guide for the rest of this conversation, until the use
 ## Role
 Guide.
 
+## Context
+The sample folder.
+
 ## Rules
 Ask first.
 
 ## Workflow
-1. Load `sample`.
+1. **Sample.** Load `sample`.
 
 ## Boundaries
 None.
@@ -24,3 +27,11 @@ Generated from your definition. Use nothing else.
 - subagents: Agent
 - Skills you load when your workflow reaches them: puck:sample
 - Agents you may start: puck:helper
+
+## Workflow and deliverables
+
+Each stage ends when its deliverable exists; a check proves it where one is given.
+
+| Stage | Skill | Delivers | Done when |
+|---|---|---|---|
+| sample | puck:sample | a sample result | `test -n sample` passes |

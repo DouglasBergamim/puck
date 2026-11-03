@@ -172,3 +172,83 @@ def test_new_skill_is_a_draft_and_refuses_duplicates(puck_home):
     assert "status: draft" in (path / "SKILL.md").read_text()
     with pytest.raises(PuckError, match="Draft a change"):
         skills.new("deploy-steps", "again", "t2")
+
+
+def test_promote_commits_only_the_skill(puck_home, monkeypatch):
+    git(puck_home, "init", "-q", "-b", "main")
+    git(puck_home, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "x")
+    (puck_home / "unrelated.txt").write_text("the user's work in progress\n")
+    git(puck_home, "add", "unrelated.txt")
+    path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
+    with pytest.raises(PuckError, match="needs evals/triggers"):
+        skills.promote("deploy-steps", run_evals=False)
+    for case in ("triggers", "ignores-build"):
+        (path / "evals" / case / "graders").mkdir(parents=True)
+        (path / "evals" / case / "prompt.md").write_text("Deploy it.\n")
+        (path / "evals" / case / "graders" / "fired.md").write_text("---\ntype: llm\n---\nPASS.\n")
+    for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
+    skills.promote("deploy-steps", run_evals=False)
+    shown = subprocess.run(["git", "-C", str(puck_home), "show", "--name-only", "--format="],
+                           capture_output=True, text=True, check=True).stdout
+    assert "deploy-steps/SKILL.md" in shown and "unrelated.txt" not in shown
+    staged = subprocess.run(["git", "-C", str(puck_home), "diff", "--cached", "--name-only"],
+                            capture_output=True, text=True, check=True).stdout
+    assert staged.strip() == "unrelated.txt"
+
+
+RESEARCH_LEAD = """---
+name: scout
+description: A lead. Use when testing.
+mode: lead
+tools: [read]
+model: strong
+skills: [scope]
+agents: []
+workflow:
+  - stage: scope
+    skill: scope
+    delivers: mission.md
+    check: puck topic check {topic} --has mission
+  - stage: talk
+    delivers: a chat
+---
+## Role
+R.
+
+## Context
+C.
+
+## Rules
+R.
+
+## Workflow
+1. **Scope.** 2. **Talk.**
+
+## Boundaries
+B.
+"""
+
+
+def test_agent_workflow_seeds_steps_and_points_spec_at_mission(puck_home, repo):
+    (paths.agents(puck_home) / "scout.md").write_text(RESEARCH_LEAD)
+    topic = paths.knowledge(puck_home) / "graph-theory"
+    topic.mkdir(parents=True)
+    (topic / "mission.md").write_text("# Mission\n")
+    task = tasks.start("research graphs", "research", repo, agent="scout", topic="Graph Theory")
+    assert [s["check"] for s in task["steps"]] == ["puck topic check graph-theory --has mission"]
+    assert task["topic"] == "graph-theory"
+    assert task["steps"][0]["desc"] == "scope: mission.md"
+    spec = (Path(task["folder"]) / "SPEC.md").read_text()
+    assert "scout's workflow" in spec and "mission.md" in spec
+    assert "Workflow: scope (scope) → talk" in pack.pack("x", workflow=tasks.lead("scout").workflow)
+
+
+def test_agent_workflow_needs_its_topic(puck_home, repo):
+    (paths.agents(puck_home) / "scout.md").write_text(RESEARCH_LEAD)
+    with pytest.raises(tasks.TaskError, match="pass --topic"):
+        tasks.start("x", "research", repo, agent="scout")
+    with pytest.raises(tasks.TaskError, match="no mission"):
+        tasks.start("x", "research", repo, agent="scout", topic="missing")
+    with pytest.raises(tasks.TaskError, match="No lead 'nobody'"):
+        tasks.start("x", "build", repo, agent="nobody")

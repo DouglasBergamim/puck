@@ -2,7 +2,7 @@
 
 Puck is a layer in front of any agent harness. It optimises the context an LLM gets and improves its tools, for two jobs: coding and planning systems, and learning topics. Claude Code and Copilot are the first adapters, not the scope.
 
-The evidence is in `docs/research/`. What has actually run on each host is in `docs/spikes.md`.
+The evidence is in `docs/research/`. What has actually run on each host is in `docs/spikes.md`. Every term used here, and the specification for skills, agents and workflows, is in `docs/concepts.md`.
 
 ## Main concepts
 
@@ -35,6 +35,8 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 | Is it a fact needed only for one procedure? | Skill `references/` |
 | Is it study material? | Knowledge |
 | Does it only matter to this task? | Task file, or scratch for experiments |
+
+**Leads run workflows.** A lead is a role you talk to, and its `workflow:` frontmatter lists the stages it runs: the skill each loads, what each delivers, and the check that proves it. `puck task start --agent <lead>` turns the stages with checks into the task's steps, so the plan and its gates come from one definition. Workers stay single jobs with a fixed Return. `docs/concepts.md` has the full specification.
 
 **Context tiers.** The host owns the window. Puck owns what enters it and what survives it.
 
@@ -78,8 +80,11 @@ There is no teacher agent. Teaching is a conversation, and a subagent can't hold
 
 | The user wants to… | Skills, in order |
 |---|---|
-| Research a field | `scope` → `field-map` → `literature` → `reading-path`, as one task of type `research` |
+| Research a question | The `researcher` lead: `scope` → `field-map` → `literature` → `report`, as one task of type `research` whose steps are the stages |
+| Plan the learning of a subject | The `professor` lead: `scope` → `curriculum` → `roadmap`, as one task of type `learn` |
 | Study it | `teach`, calling `practice` and `visualize`; no task, since the topic folder holds the state |
+| Change code in a project | The `engineer` lead: `onboard` → `plan` → `task` → `commit` |
+| Add or change a Puck skill or agent | The `constructor` lead: classify → design → write → review → activate |
 | File a source, or ask the notes | `kb` |
 
 Concept statuses are `unseen`, `introduced`, `practised`, `recalled-later` and `can-explain`. They record what happened, so none can be read as mastery.
@@ -96,8 +101,8 @@ flowchart TB
 
     subgraph behaviour["context/ behaviour"]
         rules["instructions/ and profile.md"]
-        skills["skills/: task, plan, review; scope, kb; curriculum, roadmap, teach, practice, visualize; field-map, literature, report"]
-        agents["agents/: leads professor, researcher; workers source-finder, claim-checker, grader, reviewer, retro"]
+        skills["skills/: task, plan, review, onboard, commit; scope, kb; curriculum, roadmap, teach, practice, visualize; field-map, literature, report"]
+        agents["agents/: leads professor, researcher, engineer, constructor, each with a workflow; workers source-finder, claim-checker, grader, reviewer, retro"]
         hookrules["hooks.yaml: resume, close-guard"]
     end
 
@@ -159,12 +164,13 @@ puck/
     instructions/      # global.md, the always-on rules
     profile.md         # hand-written facts about you
     skills/            # each has SKILL.md and evals/
-    agents/            # leads: professor, researcher; workers: source-finder, claim-checker, grader, reviewer, retro
+    agents/            # leads: professor, researcher, engineer, constructor; workers: source-finder, claim-checker, grader, reviewer, retro
     hooks.yaml         # resume, close-guard
-    templates/         # SPEC, skill, agent, retro; mission-learn, mission-research, map, path, report, session
+    templates/         # SPEC, skill, agent (worker), agent-lead, retro; mission-learn, mission-research, map, path, report, session
     knowledge/<topic>/ # mission, map, path, report, sources.json, raw/, wiki/, sessions/, exercises/, visuals/
     tasks/             # archived retros; created at first close
   docs/
+    concepts.md        # every term, and the spec for skills, agents and workflows
     design.md          # this file
     features.md        # every skill, agent, command and hook
     spikes.md          # what's been tested on each host

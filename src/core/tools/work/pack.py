@@ -47,13 +47,8 @@ def _markdown(folder: Path, label: str, pattern: str) -> list[tuple[str, str, st
     return found
 
 
-CHAINS = {
-    "research": "Research chain: scope, field-map, literature, report. Each skill names the next.",
-    "learn": "Learning chain: scope, curriculum, roadmap, then teach sessions. Each skill names the next.",
-}
-
-
-def pack(goal: str, root: Path | None = None, kind: str | None = None) -> str:
+def pack(goal: str, root: Path | None = None, workflow: tuple = ()) -> str:
+    """`workflow` is the lead's stages, when the task runs one."""
     root = root or store.home()
     words = keywords(goal)
     candidates = (_skills(root)
@@ -64,8 +59,9 @@ def pack(goal: str, root: Path | None = None, kind: str | None = None) -> str:
               for label, path, text in candidates]
     ranked = sorted((item for item in scored if item[0] > 0), key=lambda item: -item[0])
     lines = ["Task pack: read only what you need."]
-    if kind in CHAINS:
-        lines.append(f"- {CHAINS[kind]}")
+    if workflow:
+        chain = " → ".join(f"{s.stage} ({s.skill})" if s.skill else s.stage for s in workflow)
+        lines.append(f"- Workflow: {chain}. Run `puck task check` after each stage with a step.")
     size = sum(len(line) + 1 for line in lines)
     for _, label, path, text in ranked:
         line = f"- [{label}] {path}: {text[:120]}"

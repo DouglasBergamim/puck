@@ -8,6 +8,8 @@ from pathlib import Path
 
 from core.common import paths, store
 from core.common.errors import PuckError
+from core.common.model import Agent
+from core.primitives import build
 
 TYPES = {"build", "learn", "research", "plan"}
 FINDING_TYPES = ("procedure", "topic", "one-off")
@@ -47,9 +49,43 @@ def _make_worktree(top: Path, task_id: str) -> Path:
     return path
 
 
-def start(goal: str, kind: str, cwd: Path, worktree: bool = False) -> dict:
+def lead(name: str) -> Agent:
+    found = {a.name: a for a in build.load_agents(store.home()) if a.mode == "lead"}
+    if name not in found:
+        raise TaskError(f"No lead '{name}'. Leads: {', '.join(sorted(found)) or 'none'}.")
+    return found[name]
+
+
+def workflow_steps(agent: Agent, topic: str | None) -> list[dict]:
+    """One step per stage that has a check: the lead's workflow becomes the task's plan."""
+    steps = []
+    for stage in agent.workflow:
+        if not stage.check:
+            continue
+        if "{topic}" in stage.check and not topic:
+            raise TaskError(f"{agent.name}'s stage '{stage.stage}' checks a topic; pass --topic.")
+        steps.append({"id": f"s{len(steps) + 1}", "desc": f"{stage.stage}: {stage.delivers}",
+                      "check": stage.check.replace("{topic}", topic or ""), "passes": False,
+                      "evidence": None})
+    return steps
+
+
+def topic_spec(agent: str, topic: str) -> str:
+    return (f"# Goal\n\nRun {agent}'s workflow for the topic `{topic}`. Its `mission.md` is the "
+            f"contract: {paths.knowledge() / topic / 'mission.md'}\n\nThe steps are the workflow's "
+            "stages. Don't restate the mission here; record only decisions it doesn't cover.\n\n"
+            "## Decisions\n\n## Non-goals\n")
+
+
+def start(goal: str, kind: str, cwd: Path, worktree: bool = False,
+          agent: str | None = None, topic: str | None = None) -> dict:
     if kind not in TYPES:
         raise TaskError(f"--type must be one of {sorted(TYPES)}")
+    if topic:
+        topic = paths.topic_slug(topic)
+        if not (paths.knowledge() / topic / "mission.md").exists():
+            raise TaskError(f"Topic '{topic}' has no mission.md. Run the scope skill first.")
+    steps = workflow_steps(lead(agent), topic) if agent else []
     top_text = _git(cwd, "rev-parse", "--show-toplevel")
     if worktree and not top_text:
         raise TaskError("--worktree needs a git repository.")
@@ -73,12 +109,16 @@ def start(goal: str, kind: str, cwd: Path, worktree: bool = False) -> dict:
         (folder / "scratch" / "drafts").mkdir()
         (folder / "findings.md").touch()
         (folder / "scratch" / "LOG.md").touch()
-        shutil.copy(paths.templates() / "SPEC.md", folder / "SPEC.md")
+        if topic and agent:
+            (folder / "SPEC.md").write_text(topic_spec(agent, topic))
+        else:
+            shutil.copy(paths.templates() / "SPEC.md", folder / "SPEC.md")
         task = {
             "schema": 1, "id": task_id, "goal": goal, "type": kind, "status": "open",
             "cwd": str(work.resolve()), "folder": str(folder), "worktree": worktree,
             "project": Path(top_text).name if top_text else None,
-            "started": int(time.time()), "closed": None, "nudged": False, "steps": [],
+            "started": int(time.time()), "closed": None, "nudged": False, "steps": steps,
+            "agent": agent, "topic": topic,
         }
         save(task)
     return task

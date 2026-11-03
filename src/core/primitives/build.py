@@ -9,7 +9,7 @@ import yaml
 import adapters
 from adapters.base import Adapter
 from core.common import paths, store
-from core.common.model import Agent, File, HookRule, Skill, split_frontmatter
+from core.common.model import Agent, File, HookRule, Skill, Stage, split_frontmatter
 
 VERSION = "0.1.0"
 
@@ -44,6 +44,13 @@ def load_skills(root: Path) -> list[Skill]:
     return skills
 
 
+def stages(meta: dict) -> tuple[Stage, ...]:
+    """A lead's workflow from its frontmatter. Lint has already checked the shape."""
+    return tuple(Stage(stage=str(item["stage"]), delivers=str(item["delivers"]),
+                       skill=str(item.get("skill") or ""), check=str(item.get("check") or ""))
+                 for item in meta.get("workflow") or [])
+
+
 def load_agents(root: Path) -> list[Agent]:
     agents = []
     for path in sorted(paths.agents(root).glob("*.md")):
@@ -53,7 +60,7 @@ def load_agents(root: Path) -> list[Agent]:
             name=meta["name"], description=meta["description"], tools=tuple(meta["tools"]),
             model=meta["model"], max_turns=int(turns) if turns else None, body=body,
             mode=meta.get("mode", "worker"), skills=tuple(meta.get("skills") or ()),
-            agents=tuple(meta.get("agents") or ()),
+            agents=tuple(meta.get("agents") or ()), workflow=stages(meta),
         ))
     return agents
 

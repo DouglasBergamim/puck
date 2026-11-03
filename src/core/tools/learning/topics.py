@@ -26,10 +26,7 @@ ROW = re.compile(r"^\|\s*([a-z0-9][a-z0-9-]*)\s*\|(.*)\|\s*$")
 
 
 def slug(name: str) -> str:
-    cleaned = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-    if not cleaned:
-        raise PuckError("A topic name needs at least one letter or digit.")
-    return cleaned[:60]
+    return paths.topic_slug(name)
 
 
 def folder(name: str) -> Path:

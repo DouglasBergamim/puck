@@ -6,15 +6,23 @@ tools: [read, subagents]
 model: strong
 skills: [sample]
 agents: [helper]
+workflow:
+  - stage: sample
+    skill: sample
+    delivers: a sample result
+    check: test -n sample
 ---
 ## Role
 Guide.
+
+## Context
+The sample folder.
 
 ## Rules
 Ask first.
 
 ## Workflow
-1. Load `sample`.
+1. **Sample.** Load `sample`.
 
 ## Boundaries
 None.

@@ -51,6 +51,8 @@ def promote(name: str, run_evals: bool = True) -> str:
         raise PuckError(f"No skill '{name}'.")
     with store.locked("skills"):
         errors = [e for e in lint.lint_all(root) if f"skills/{name}" in e]
+        # Lint checks evals only for active skills, and this one is still a draft.
+        errors += [f"skills/{name}: {p}" for p in lint.eval_problems(_skill_dir(name))]
         if errors:
             raise PuckError("Lint failed:\n" + "\n".join(errors))
         cases = _skill_dir(name) / "evals"
@@ -67,6 +69,7 @@ def promote(name: str, run_evals: bool = True) -> str:
                 build.build_all(root)
                 raise PuckError("Evals failed; skill stays a draft:\n" + result.stdout[-1500:])
         subprocess.run(["git", "-C", str(root), "add", str(_skill_dir(name))], check=True)
-        subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", f"Promote skill {name}"],
-                       check=True)
+        # The pathspec keeps anything else the user has staged out of this commit.
+        subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", f"Promote skill {name}",
+                        "--", str(_skill_dir(name))], check=True)
     return name

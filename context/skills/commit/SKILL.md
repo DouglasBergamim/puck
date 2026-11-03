@@ -22,7 +22,7 @@ Commit only because the user asked. Asking to build something is not asking to c
 4. **Group.** One commit per logical change, so each one could be reverted on its own. Stage by explicit path, never everything at once.
 5. **Check before committing.** If a task is open, run `puck task show` and say which checks don't pass yet. Run the project's fast test or lint command if `AGENTS.md` names one. A failing check doesn't block a commit the user asked for, but say so in your reply.
 6. **Write the message.** Subject in the imperative, at most 72 characters, in the style the log shows. Body: why the change was made, and anything a reviewer must know. End with the attribution lines your host gives for commits, if it gives any.
-7. **Commit**, and commit only the paths you chose: `git commit -m "<message>" -- <paths>`, so anything else staged stays out. If a pre-commit hook fails, fix the cause and make a new commit. Never bypass hooks, never amend a commit that's already pushed, never force-push.
+7. **Commit only what you chose.** For whole files, `git commit -m "<message>" -- <paths>` keeps anything else staged out. When you staged only part of a file, check `git diff --cached` and use a plain `git commit`, because a path argument commits the working-tree version of each path and undoes the split. If a pre-commit hook fails, fix the cause and make a new commit. Never bypass hooks, never amend a commit that's already pushed, never force-push.
 8. **Push only when asked**, and only to a remote the project's rules allow.
 9. **Report.** Show `git log --oneline -n <commits made>` and `git status --short`, and list what you deliberately left out.
 

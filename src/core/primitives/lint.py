@@ -24,6 +24,12 @@ def headings(body: str) -> list[str]:
     return re.findall(r"^## (.+)$", body, re.MULTILINE)
 
 
+def section(body: str, name: str) -> str:
+    """The text under one `## name` heading, up to the next one."""
+    match = re.search(rf"^## {re.escape(name)}\n(.*?)(?=^## |\Z)", body, re.MULTILINE | re.DOTALL)
+    return match.group(1) if match else ""
+
+
 def tool_names() -> set[str]:
     return {
         tool
@@ -68,8 +74,25 @@ def lint_skill(directory: Path, tools: set[str]) -> list[str]:
         errors.append(f"{where}: Procedure must be the first section")
     if "Done when" not in sections:
         errors.append(f"{where}: needs a 'Done when' section")
+    if metadata.get("status") == "active":
+        errors += [f"{where}: {problem}" for problem in eval_problems(directory)]
     errors += [f"{where}: {problem}" for problem in host_specific(body, tools)]
     return errors
+
+
+def eval_problems(directory: Path) -> list[str]:
+    """An active skill needs a trigger case and a near miss, each with a prompt and a grader."""
+    root = directory / "evals"
+    cases = sorted(p for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
+    names = [case.name for case in cases]
+    problems = []
+    if "triggers" not in names or len(names) < 2:
+        problems.append("an active skill needs evals/triggers and at least one near-miss case")
+    for case in cases:
+        graders = case / "graders"
+        if not (case / "prompt.md").is_file() or not graders.is_dir() or not any(graders.glob("*.md")):
+            problems.append(f"evals/{case.name} needs prompt.md and at least one graders/*.md")
+    return problems
 
 
 def host_specific(body: str, tools: set[str]) -> list[str]:
@@ -83,7 +106,7 @@ def host_specific(body: str, tools: set[str]) -> list[str]:
 
 
 AGENT_SECTIONS = {
-    "lead": ("Role", "Rules", "Workflow", "Boundaries"),
+    "lead": ("Role", "Context", "Rules", "Workflow", "Boundaries"),
     "worker": ("Role", "You receive", "Rules", "Workflow", "Boundaries", "Return"),
 }
 
@@ -112,24 +135,66 @@ def lint_agent(path: Path, capabilities: set[str], skills: set[str] = frozenset(
         mode = "worker"
     if mode == "worker" and "ask" in (meta.get("tools") or []):
         errors.append(f"{where}: a worker can't reach the user, so it can't have the ask capability")
-    if mode == "lead" and path.stem in skills:
+    # Any skill folder counts here, drafts too: promoting one would make the names collide.
+    if mode == "lead" and (path.stem in skills or (path.parent.parent / "skills" / path.stem).is_dir()):
         errors.append(f"{where}: a lead becomes a skill, so its name can't match the skill '{path.stem}'")
     for field in ("skills", "agents"):
         if not isinstance(meta.get(field, []), list):
             errors.append(f"{where}: {field} must be a list")
     missing = sorted(set(meta.get("skills") or []) - skills)
     if missing:
-        errors.append(f"{where}: unknown skills {missing}")
+        errors.append(f"{where}: unknown or inactive skills {missing}; only active skills are built")
     missing = sorted(set(meta.get("agents") or []) - workers)
     if missing:
         errors.append(f"{where}: agents must name worker agents, got {missing}")
     if (meta.get("agents") or []) and "subagents" not in (meta.get("tools") or []):
         errors.append(f"{where}: starting agents needs the subagents capability")
-    for section in AGENT_SECTIONS[mode]:
-        if section not in headings(body):
-            errors.append(f"{where}: missing section '{section}'")
+    for name in AGENT_SECTIONS[mode]:
+        if name not in headings(body):
+            errors.append(f"{where}: missing section '{name}'")
+    if mode == "lead":
+        errors += [f"{where}: {problem}" for problem in lint_workflow(meta, body)]
+    else:
+        if meta.get("workflow"):
+            errors.append(f"{where}: only a lead has a workflow; a worker's steps go in its body")
+        if "Return" in headings(body) and "status:" not in section(body, "Return"):
+            errors.append(f"{where}: Return must include 'status: complete | partial | blocked'")
     errors += [f"{where}: {problem}" for problem in host_specific(body, tools)]
     return errors
+
+
+def lint_workflow(meta: dict, body: str) -> list[str]:
+    """A lead's stages: each delivers something, loads a skill it declares, and is described."""
+    stages = meta.get("workflow")
+    if not isinstance(stages, list) or not stages:
+        return ["a lead needs a workflow: a list of stages, each with stage and delivers"]
+    problems, seen = [], set()
+    declared = {s for s in (meta.get("skills") or []) if isinstance(s, str)}
+    prose = section(body, "Workflow").lower()
+    for item in stages:
+        if not isinstance(item, dict):
+            problems.append("each workflow stage must be a mapping")
+            continue
+        name = str(item.get("stage", ""))
+        unknown = sorted(set(item) - {"stage", "skill", "delivers", "check"})
+        if unknown:
+            problems.append(f"stage '{name}': unknown fields {unknown}")
+        if not NAME.match(name):
+            problems.append(f"stage '{name}': ids are lowercase words joined by hyphens")
+        if name in seen:
+            problems.append(f"stage '{name}' appears twice")
+        seen.add(name)
+        for field in ("delivers", "skill", "check"):
+            if field in item and not isinstance(item[field], str):
+                problems.append(f"stage '{name}': {field} must be text")
+        if not isinstance(item.get("delivers"), str) or not item["delivers"].strip():
+            problems.append(f"stage '{name}': needs delivers")
+        skill = item.get("skill")
+        if isinstance(skill, str) and skill and skill not in declared:
+            problems.append(f"stage '{name}': skill '{skill}' isn't in skills")
+        if name and not re.search(rf"\*\*{re.escape(name.lower())}\b", prose):
+            problems.append(f"stage '{name}' needs a bold entry (**{name.capitalize()}.**) in the Workflow section")
+    return problems
 
 
 def lint_hooks(path: Path) -> list[str]:
@@ -166,7 +231,13 @@ def lint_all(root: Path | None = None) -> list[str]:
     errors = lint_budget(root)
     for directory in sorted(p for p in paths.skills(root).iterdir() if p.is_dir()):
         errors += lint_skill(directory, tools)
-    skills = {p.name for p in paths.skills(root).iterdir() if p.is_dir()}
+    skills = set()
+    for directory in (p for p in paths.skills(root).iterdir() if p.is_dir()):
+        try:
+            if (split_frontmatter((directory / "SKILL.md").read_text())[0].get("metadata") or {}).get("status") == "active":
+                skills.add(directory.name)
+        except (OSError, ValueError, yaml.YAMLError):
+            pass  # lint_skill reports it
     agent_paths = sorted(paths.agents(root).glob("*.md"))
     workers = set()
     for path in agent_paths:

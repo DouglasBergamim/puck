@@ -94,6 +94,15 @@ Everything lands in `context/knowledge/<topic>/`. Then study, in as many session
 3. **[literature]** One `source-finder` per subtopic plus one for criticism. Then `puck topic check` and the `claim-checker` agent verify every source and claim, and it writes `wiki/` pages.
 4. **[report]** `report.md`: the answer, what's settled, what's disputed and by whom, what's open, and what to read first, every claim cited.
 
+Once the mission is written, the researcher opens one task with `--agent researcher --topic <topic>`. Its steps are these four stages, each checked by `puck topic check`, so `puck task show` says how far the run got.
+
+### 6. Example: a new skill or agent
+
+```
+> /puck:constructor I want a skill that writes a changelog entry from the commits on my branch
+```
+
+It classifies the need (here, a skill, not a command or a lead), drafts the design and asks at most three questions, writes it with `puck skill new` and evals, has the `reviewer` check it against `docs/concepts.md`, and promotes it only when you say yes.
 
 Other things you can just say:
 - "Where am I with information theory?"
@@ -113,6 +122,8 @@ Skills run in your conversation. In Claude Code, call one as `/puck:<name>`, or 
 | `task` | Non-trivial work, from start to a verified close: building or fixing code, or a full research run | A task with steps and checks | `retro` at close, when findings exist | `review` before close |
 | `plan` | An undecided goal: interviews you and writes a one-page spec | `SPEC.md` | — | `task` |
 | `review` | Reviewing a change or diff against its `SPEC.md` or requirement, or checking it's ready to merge | `review.md` | `reviewer` | — |
+| `onboard` | Getting up to speed on a project: what it is, layout, commands (found vs verified), rules, what's in flight, gaps. Reads only and opens no task | A brief in chat | — | `plan` or `task` |
+| `commit` | "Commit this": groups the changes into logical commits in the project's message style, stages by path, leaves out secrets, build output and your other staged work. Pushes only when asked | Commits | — | — |
 
 `scope` is shared: it writes the mission for both chains, from `mission-learn.md` or `mission-research.md`.
 
@@ -147,7 +158,7 @@ Agents are defined in `context/agents/`. There are two kinds, set by `mode` in e
 - **Leads** are agents you talk to.
 - **Workers** do one job in the background and return one result.
 
-Every agent file lists its workflow, tools, skills and the workers it may start. The build adds a generated section to each agent, so it knows exactly what it has. Lint checks that the skills and workers it names exist.
+Every agent file lists its tools, skills and the workers it may start. A lead also has a `workflow:` of stages, each with a skill, what it delivers and the check that proves it, and a `Context` section saying what it reads first. The build adds a generated section to each agent with its tools, skills, workers and, for a lead, a "Workflow and deliverables" table, so it knows exactly what it has. Lint checks the stages, the sections and that the skills and workers it names exist. `docs/concepts.md` has the full specification.
 
 ### Leads: pick one after starting your harness
 
@@ -159,6 +170,8 @@ Leads ask you decisions, such as your goal or depth, through the harness's quest
 |---|---|---|---|---|
 | `professor` | `/puck:professor`, or "I want to learn X" | **Plan**, once per topic: 1. Scope the mission. 2. Find how the subject is taught. 3. Build the roadmap.<br>**Study**, every session after: recall of last time, the next concept, your attempt, an explanation, practice and visuals, and a record of the session.<br>Only scoping asks you anything | `scope`, `curriculum`, `roadmap`, `teach`, `practice`, `visualize`, `kb` | `source-finder`, `grader` |
 | `researcher` | `/puck:researcher`, or "what's known about Q?" | 1. Scope the question.<br>2. Map the field.<br>3. Find and verify the literature, with its critics.<br>4. Write a cited report.<br>Only scoping asks you anything; it searches nothing until the mission is written | `scope`, `field-map`, `literature`, `report`, `kb` | `source-finder`, `claim-checker` |
+| `engineer` | `/puck:engineer`, or "take this change from the codebase to a commit" | 1. **onboard**: a project brief.<br>2. **plan**: `SPEC.md`, when the goal is undecided.<br>3. **build**: the task skill, through checks, review, retro and close.<br>4. **commit**: only when you ask.<br>Only planning asks you anything | `onboard`, `plan`, `task`, `review`, `commit` | `reviewer`, `retro` |
+| `constructor` | `/puck:constructor`, or "make a Puck skill that…" | 1. **classify**: which primitive, new or a change.<br>2. **design**: drafted, then at most 3 questions.<br>3. **write**: scaffolded and written to `docs/concepts.md`, with evals; `puck lint` passes.<br>4. **review**: the `reviewer` against the spec.<br>5. **activate**: promote or build, only on your yes | `task`, `review` | `reviewer` |
 
 ### Workers: started by skills
 
@@ -170,7 +183,7 @@ You rarely call a worker yourself. In Claude Code you can @-mention one, for exa
 | `claim-checker` | Checks each wiki claim against the source text it cites | read | Wiki page paths and the topic folder | `literature` |
 | `grader` | Scores an attempt 0 or 1 per rubric criterion, without seeing the teaching conversation | read | The attempt, plus `prompt.md`, `key.md` and `rubric.md` | `practice` |
 | `reviewer` | Reviews a code change with fresh eyes | read, shell-read | The change or diff range, and the requirement | `review` |
-| `retro` | Sorts a finished task's findings into one-offs, topic wiki pages, skills, project notes or rules | read, shell, edit | The task ID and folder | `task` at close |
+| `retro` | Sorts a finished task's findings into one-offs, topic wiki pages, draft skills and diffs to existing skills. Never touches instructions | read, shell, edit | The task ID and folder | `task` at close |
 
 ## Commands
 
@@ -192,14 +205,15 @@ There are three kinds:
 | `puck lint` | Checks skills, agents, hooks and context budgets | yes |
 | `puck build` | Lints, then generates the host packages in `dist/` | — |
 | `puck skill new <name> --description … --origin …` | Creates a draft skill from the template | — |
-| `puck skill promote <name> [--no-evals]` | Lints, runs evals, activates, rebuilds and commits one draft skill. The task skill runs it only when you say yes | — |
+| `puck skill promote <name> [--no-evals]` | Lints, runs evals, activates, rebuilds and commits one draft skill, and only that skill's folder: anything else you staged stays staged. Runs only when you say yes | — |
+| `puck agent new <name> --mode worker\|lead --description …` | Creates an agent from `templates/agent.md` or `templates/agent-lead.md`. Refuses a duplicate, or a lead named like a skill | — |
 | `puck hook <id> --event … --host …` | Entry point the host calls for hooks; not for direct use | — |
 
 ### Work: tasks, notes and experiments
 
 | Command | Does | Pre-approved |
 |---|---|---|
-| `puck task start "<goal>" [--type build\|plan\|research\|learn] [--worktree]` | Opens a task and prints its context pack | yes |
+| `puck task start "<goal>" [--type build\|plan\|research\|learn] [--worktree] [--agent LEAD] [--topic TOPIC]` | Opens a task and prints its context pack. With `--agent`, the lead's workflow stages that have checks become the steps. With `--topic`, the SPEC points to the topic's `mission.md` | yes |
 | `puck task list [--all]` | Lists open tasks, or all of them | yes |
 | `puck task show [--task ID] [--json]` | Shows a task and its steps | yes |
 | `puck task step "<description>" --check "<command>"` | Adds a step with the command that proves it done | yes |

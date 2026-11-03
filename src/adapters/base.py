@@ -77,6 +77,14 @@ class Adapter:
         lines.append(f"- Skills you load when your workflow reaches them: {names}")
         names = ", ".join(map(self.qualified, agent.agents)) if agent.agents else "none"
         lines.append(f"- Agents you may start: {names}")
+        if agent.workflow:
+            lines += ["", "## Workflow and deliverables", "",
+                      "Each stage ends when its deliverable exists; a check proves it where one is given.", "",
+                      "| Stage | Skill | Delivers | Done when |", "|---|---|---|---|"]
+            for stage in agent.workflow:
+                skill = self.qualified(stage.skill) if stage.skill else "—"
+                done = f"`{stage.check}` passes" if stage.check else "the deliverable exists"
+                lines.append(f"| {stage.stage} | {skill} | {stage.delivers} | {done} |")
         return "\n".join(lines) + "\n"
 
     def render_agent(self, agent: Agent) -> list[File]:

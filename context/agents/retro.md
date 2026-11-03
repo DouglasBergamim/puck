@@ -33,5 +33,6 @@ Don't edit `context/instructions/`, active skills or project files. Don't close 
 
 ## Return
 At most 300 tokens in this exact format:
+- status: complete | partial | blocked
 - retro_path:
 - drafts: each new skill name or diff path, with a one-line summary

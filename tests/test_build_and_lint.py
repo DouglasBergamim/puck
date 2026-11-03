@@ -50,7 +50,7 @@ def test_lint_enforces_always_on_budget(puck_home):
 
 
 def test_lint_checks_agents(puck_home):
-    (paths.agents(puck_home) / "agent-name.md").write_text(AGENT.replace("[read, search]", "[teleport]"))
+    (paths.agents(puck_home) / "agent-name.md").write_text(AGENT.replace("tools: [read]", "tools: [teleport]"))
     assert any("known capabilities" in e for e in lint.lint_all(puck_home))
 
 
@@ -75,7 +75,7 @@ def test_claude_package_shape(puck_home):
     assert (target / "skills/task/references/host-tools.md").exists()
     assert not (target / "instructions.md").exists()
     agent = (target / "agents/agent-name.md").read_text()
-    assert "tools: Read, Bash" in agent and "model: opus" in agent and "maxTurns: 20" in agent
+    assert "tools: Read\n" in agent and "model: opus" in agent and "maxTurns: 20" in agent
 
 
 def test_copilot_package_shape(puck_home):
@@ -171,15 +171,21 @@ tools: {tools}
 model: strong
 skills: {skills}
 agents: {agents}
+workflow:
+  - stage: work
+    delivers: the thing
 ---
 ## Role
 R.
+
+## Context
+C.
 
 ## Rules
 R.
 
 ## Workflow
-1. W.
+1. **Work.** W.
 
 ## Boundaries
 B.
@@ -195,7 +201,7 @@ def test_leads_must_reference_real_skills_and_workers(puck_home):
     assert lint.lint_agent(lead, set(CAPABILITIES), {"task"}, {"worker"}) == []
     lead.write_text(LEAD.format(name="guide", tools="[read]", skills="[nope]", agents="[guide]"))
     joined = "\n".join(lint.lint_agent(lead, set(CAPABILITIES), {"task"}, {"worker"}))
-    assert "unknown skills ['nope']" in joined and "must name worker agents" in joined
+    assert "inactive skills ['nope']" in joined and "must name worker agents" in joined
     assert "needs the subagents capability" in joined
     clash = agents / "task.md"
     clash.write_text(LEAD.format(name="task", tools="[read]", skills="[]", agents="[]"))
@@ -215,5 +221,90 @@ def test_a_lead_becomes_a_role_skill_not_a_background_agent(puck_home):
 def test_only_leads_may_ask_the_user(puck_home):
     from core.common.model import CAPABILITIES
     worker = paths.agents(puck_home) / "agent-name.md"
-    worker.write_text(AGENT.replace("[read, search]", "[read, ask]"))
+    worker.write_text(AGENT.replace("tools: [read]", "tools: [read, ask]"))
     assert any("can't have the ask capability" in e for e in lint.lint_agent(worker, set(CAPABILITIES)))
+
+
+def lead_text(workflow, skills="[task]", body_stages="**Work.**"):
+    return LEAD.format(name="guide", tools="[read]", skills=skills, agents="[]").replace(
+        "workflow:\n  - stage: work\n    delivers: the thing\n", workflow).replace("**Work.**", body_stages)
+
+
+def test_lead_workflow_is_checked(puck_home):
+    from core.common.model import CAPABILITIES
+    lead = paths.agents(puck_home) / "guide.md"
+    check = lambda: "\n".join(lint.lint_agent(lead, set(CAPABILITIES), {"task"}, set()))
+    lead.write_text(lead_text("workflow:\n  - stage: work\n    skill: task\n    delivers: x\n    check: \"true\"\n"))
+    assert check() == ""
+    lead.write_text(lead_text(""))
+    assert "a lead needs a workflow" in check()
+    lead.write_text(lead_text("workflow:\n  - stage: work\n    skill: nope\n    delivers: ''\n"))
+    assert "skill 'nope' isn't in skills" in check() and "needs delivers" in check()
+    lead.write_text(lead_text("workflow:\n  - stage: work\n    delivers: x\n", body_stages="**Other.** Rework it."))
+    assert "needs a bold entry" in check()
+    lead.write_text(lead_text("workflow:\n  - stage: work\n    skill: [task]\n    delivers: {a: 1}\n    check: [a, b]\n"))
+    joined = check()
+    assert "skill must be text" in joined and "check must be text" in joined and "needs delivers" in joined
+    lead.write_text(lead_text("workflow:\n  - stage: work\n    delivers: x\n").replace("## Context\nC.\n\n", ""))
+    assert "missing section 'Context'" in check()
+
+
+def test_worker_status_and_no_workflow(puck_home):
+    from core.common.model import CAPABILITIES
+    worker = paths.agents(puck_home) / "agent-name.md"
+    worker.write_text(AGENT)
+    assert lint.lint_agent(worker, set(CAPABILITIES)) == []
+    worker.write_text(AGENT.replace("- status: complete | partial | blocked\n", ""))
+    assert any("Return must include 'status:" in e for e in lint.lint_agent(worker, set(CAPABILITIES)))
+    worker.write_text(AGENT.replace("model: strong", "model: strong\nworkflow: [{stage: a, delivers: b}]"))
+    assert any("only a lead has a workflow" in e for e in lint.lint_agent(worker, set(CAPABILITIES)))
+
+
+def test_active_skill_needs_trigger_and_near_miss_evals(puck_home):
+    add_skill(puck_home, "live-one", template("live-one").replace("status: draft", "status: active"))
+    assert any("needs evals/triggers" in e for e in lint.lint_all(puck_home))
+    for case in ("triggers", "ignores-other"):
+        (paths.skills(puck_home) / "live-one" / "evals" / case).mkdir(parents=True)
+    assert any("evals/triggers needs prompt.md" in e for e in lint.lint_all(puck_home))
+    for case in ("triggers", "ignores-other"):
+        folder = paths.skills(puck_home) / "live-one" / "evals" / case
+        (folder / "prompt.md").write_text("Say hi.\n")
+        (folder / "graders").mkdir()
+        (folder / "graders" / "fired.md").write_text("---\ntype: llm\n---\nPASS if hi.\n")
+    assert not any("live-one" in e for e in lint.lint_all(puck_home))
+
+
+def test_agents_may_name_only_active_skills(puck_home):
+    from core.common.model import CAPABILITIES
+    add_skill(puck_home, "draft-one", template())
+    lead = paths.agents(puck_home) / "guide.md"
+    lead.write_text(lead_text("workflow:\n  - stage: work\n    skill: draft-one\n    delivers: x\n", skills="[draft-one]"))
+    assert any("inactive skills ['draft-one']" in e for e in lint.lint_all(puck_home))
+    clash = paths.agents(puck_home) / "draft-one.md"
+    clash.write_text(lead_text("workflow:\n  - stage: work\n    delivers: x\n").replace("name: guide", "name: draft-one"))
+    assert any("can't match the skill" in e for e in lint.lint_agent(clash, set(CAPABILITIES)))
+
+
+def test_workflow_renders_as_a_deliverables_table(puck_home):
+    import adapters
+    (paths.agents(puck_home) / "guide.md").write_text(lead_text(
+        "workflow:\n  - stage: work\n    skill: task\n    delivers: the thing\n    check: make test\n"))
+    files = {f.path: f for f in build.render(adapters.get("claude"), puck_home)}
+    text = files["skills/guide/SKILL.md"].content.decode()
+    assert "## Workflow and deliverables" in text
+    assert "| work | puck:task | the thing | `make test` passes |" in text
+
+
+def test_agent_new_scaffolds_and_refuses_clashes(puck_home):
+    import pytest
+    from core.common.errors import PuckError
+    from core.primitives import agents
+    agents.new("helper-one", "worker", "Helps. Use when testing.")
+    agents.new("guide-one", "lead", "Guides. Use when testing.")
+    assert lint.lint_all(puck_home) == []
+    with pytest.raises(PuckError, match="exists"):
+        agents.new("helper-one", "worker", "again")
+    with pytest.raises(PuckError, match="becomes a skill"):
+        agents.new("task", "lead", "clash")
+    with pytest.raises(PuckError, match="--mode"):
+        agents.new("x", "boss", "bad mode")

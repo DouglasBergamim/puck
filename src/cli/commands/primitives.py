@@ -8,7 +8,7 @@ from pathlib import Path
 
 import adapters
 from core.common import store
-from core.primitives import build, install, lint, skills
+from core.primitives import agents, build, install, lint, skills
 from core.tools import AGENT_COMMANDS
 from core.tools.work import tasks
 
@@ -82,6 +82,11 @@ def skill_command(args) -> int:
     return 0
 
 
+def agent_command(args) -> int:
+    print(agents.new(args.name, args.mode, args.description))
+    return 0
+
+
 def register(commands) -> None:
     status_parser = commands.add_parser("status", help="show Puck's state")
     status_parser.add_argument("--json", action="store_true")
@@ -111,3 +116,11 @@ def register(commands) -> None:
     promote = skill.add_parser("promote")
     promote.add_argument("name")
     promote.add_argument("--no-evals", action="store_true")
+
+    agent_parser = commands.add_parser("agent", help="manage agents")
+    agent_parser.set_defaults(run=agent_command)
+    agent = agent_parser.add_subparsers(dest="action", required=True)
+    new_agent = agent.add_parser("new")
+    new_agent.add_argument("name")
+    new_agent.add_argument("--mode", required=True, choices=sorted(agents.TEMPLATES))
+    new_agent.add_argument("--description", required=True)

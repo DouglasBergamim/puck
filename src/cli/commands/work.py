@@ -9,12 +9,15 @@ from core.tools.work import pack, scratch, tasks
 def task_command(args) -> int:
     cwd = Path.cwd()
     if args.action == "start":
-        task = tasks.start(args.goal, args.type, cwd, args.worktree)
+        task = tasks.start(args.goal, args.type, cwd, args.worktree, args.agent, args.topic)
         print(f"Task: {task['id']}")
         print(f"Folder: {task['folder']}")
         if task["worktree"]:
             print(f"Worktree: {task['cwd']} (open the session there)")
-        print(pack.pack(args.goal, kind=args.type))
+        if task["steps"]:
+            print(tasks.checklist(task))
+        workflow = tasks.lead(args.agent).workflow if args.agent else ()
+        print(pack.pack(args.goal, workflow=workflow))
     elif args.action == "list":
         for task in tasks.all_tasks():
             if args.all or task["status"] == "open":
@@ -61,6 +64,8 @@ def register(commands) -> None:
     start.add_argument("goal")
     start.add_argument("--type", default="build")
     start.add_argument("--worktree", action="store_true")
+    start.add_argument("--agent", help="a lead whose workflow stages become the task's steps")
+    start.add_argument("--topic", help="the topic the workflow runs on; its mission is the contract")
     listing = task.add_parser("list")
     listing.add_argument("--all", action="store_true")
     show = task.add_parser("show")

@@ -1,7 +1,10 @@
 """The one place that knows Puck's folder layout."""
 
 import os
+import re
 from pathlib import Path
+
+from core.common.errors import PuckError
 
 CONTEXT = Path("context")
 BUILT = ("instructions", "skills", "agents", "hooks.yaml", "profile.md", "templates")
@@ -10,6 +13,14 @@ BUILT = ("instructions", "skills", "agents", "hooks.yaml", "profile.md", "templa
 def home() -> Path:
     override = os.environ.get("PUCK_HOME")
     return Path(override) if override else Path(__file__).resolve().parents[3]
+
+
+def topic_slug(name: str) -> str:
+    """A topic's folder name. Tasks and topics both use it, so it lives here."""
+    cleaned = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    if not cleaned:
+        raise PuckError("A topic name needs at least one letter or digit.")
+    return cleaned[:60]
 
 
 def context(root: Path | None = None) -> Path:
