@@ -2,7 +2,8 @@ import json
 
 import pytest
 
-from core import hooks, tasks
+from core.tools.work import tasks
+from core import hooks
 
 
 def call(hook, event, host, payload):

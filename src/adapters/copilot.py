@@ -7,7 +7,7 @@ nested output. Both payloads carry the `cwd` and `stop_hook_active` fields Puck 
 from pathlib import PurePosixPath
 
 from adapters.base import PluginAdapter, text_file
-from core.model import Agent, Event, File, HookRule, Result, ToolMap, frontmatter
+from core.common.model import Agent, Event, File, HookRule, Result, ToolMap, frontmatter
 
 CLI_EVENTS = {"session-start": "sessionStart", "stop": "agentStop"}
 VSCODE_EVENTS = {"session-start": "SessionStart", "stop": "Stop"}
@@ -40,7 +40,8 @@ class CopilotAdapter(PluginAdapter):
             "description": agent.description,
             "tools": self.tool_names(agent.tools),
         }
-        return [text_file(f"agents/{agent.name}.agent.md", frontmatter(head, agent.body))]
+        body = agent.body.rstrip("\n") + "\n\n" + self.agent_reference(agent)
+        return [text_file(f"agents/{agent.name}.agent.md", frontmatter(head, body))]
 
     def hook_entry(self, rule: HookRule, seconds: int) -> dict:
         return {"type": "command", "bash": self.hook_command(rule), "timeoutSec": seconds}
@@ -55,5 +56,6 @@ class CopilotAdapter(PluginAdapter):
             output["additionalContext"] = nested["additionalContext"]
         return output
 
-    def launch_command(self, package: PurePosixPath) -> list[str]:
+    def launch_command(self, package: PurePosixPath, home: PurePosixPath | None = None,
+                       commands: tuple[str, ...] = (), extra: tuple[str, ...] = ()) -> list[str]:
         return ["copilot", "plugin", "install", str(package)]

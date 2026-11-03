@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from core import paths
+from core.common import paths
 
 REPO = Path(__file__).resolve().parent.parent
 

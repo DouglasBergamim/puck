@@ -9,3 +9,4 @@
 | edit | your harness's equivalent |
 | web | your harness's equivalent |
 | subagents | your harness's equivalent |
+| ask | your harness's equivalent |

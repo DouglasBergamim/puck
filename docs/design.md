@@ -2,7 +2,7 @@
 
 Puck is a layer in front of any agent harness. It optimises the context an LLM gets and improves its tools, for two jobs: coding and planning systems, and learning topics. Claude Code and Copilot are the first adapters, not the scope.
 
-The evidence is in `docs/research/`. What has actually run on each host is in `docs/spikes.md`.
+The evidence is in `docs/research/`. What has actually run on each host is in `docs/spikes.md`. Every term used here, and the specification for skills, agents and workflows, is in `docs/concepts.md`.
 
 ## Main concepts
 
@@ -12,7 +12,7 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 
 **History belongs to the host.** Puck keeps no session records. It tracks plans and their steps, and hooks restore a plan from the working directory.
 
-**`context/` is the source of truth.** Behaviour (instructions, skills, agents, hooks, profile) is linted and built into per-host packages. Data (knowledge, past retros, proposals) only informs a task when it's read.
+**`context/` is the source of truth.** Behaviour (instructions, skills, agents, hooks, profile) is linted and built into per-host packages. Data (knowledge, past retros) only informs a task when it's read.
 
 **Adapters keep hosts apart.** `src/core` knows no harness by name. Each harness gets one pure adapter that renders `context/` at build time and translates hook traffic at run time. The base `Adapter` is the generic harness, so anything reading `AGENTS.md` and `.agents/skills/` works without new code.
 
@@ -36,6 +36,8 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 | Is it study material? | Knowledge |
 | Does it only matter to this task? | Task file, or scratch for experiments |
 
+**Leads run workflows.** A lead is a role you talk to, and its `workflow:` frontmatter lists the stages it runs: the skill each loads, what each delivers, and the check that proves it. `puck task start --agent <lead>` turns the stages with checks into the task's steps, so the plan and its gates come from one definition. Workers stay single jobs with a fixed Return. `docs/concepts.md` has the full specification.
+
 **Context tiers.** The host owns the window. Puck owns what enters it and what survives it.
 
 | Tier | Contents | Budget | Loaded by |
@@ -53,7 +55,7 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 3. **Work.** Findings go through `puck note`, and uncertain ideas are tried in scratch.
 4. **Verify.** `puck task check` runs each check, and only a real exit 0 passes a step. Non-trivial changes also get the `reviewer` agent.
 5. **Retro.** With findings, a fresh `retro` agent classifies them, and `puck task close` refuses to finish without its output.
-6. **Close.** The retro is archived and proposals go to you as one short list. If the agent forgets to close, the `close-guard` hook blocks once to remind it.
+6. **Close.** The retro is archived, and any skill drafts go to you as one short list. If the agent forgets to close, the `close-guard` hook blocks once to remind it.
 
 **Capture.** Risk decides how each finding lands. Standing instructions never change without your approval.
 
@@ -62,13 +64,32 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 | One-off | Task retro | Automatic |
 | Fact about a topic | `knowledge/` wiki page with its source | Automatic |
 | New procedure | Skill with status `draft`, which no build includes | Draft is automatic; promotion needs approval, then runs lint, evals, build and commit |
-| Change to a skill | Patch in `proposals/` | Approval |
-| Fact about a project | That project's `AGENTS.md` | Approval |
-| Rule for all your work | `instructions/global.md`, checked against its budget | Approval |
+| Change to a skill | A diff in the task's `scratch/drafts/` | Approval, then `git apply` and build |
+
+Instructions and project `AGENTS.md` files are never changed by the retro. They change rarely, so you edit them yourself.
 
 **Parallel work.** The host runs the agents, and Puck keeps them from colliding. There's no global active task: hooks and commands find the plan from the working directory, so each worktree from `puck task start --worktree` sees only its own. Shared writes go through file locks. Merging stays your decision.
 
-**Not built yet:** the `kb`, `learn` and `research` skills, the `researcher` and `claim-checker` agents, spaced repetition, external search, an MCP server and cross-host memory.
+**Research and learning.** Each topic gets a folder in `context/knowledge/<topic>/`, which holds its state on every host. Skills cover the steps: `scope` and `kb` are shared; `curriculum`, `roadmap`, `teach`, `practice` and `visualize` serve learning; `field-map`, `literature` and `report` serve research. Two lead agents are what you talk to. The `professor` teaches a subject: it builds a roadmap from the books, courses and recommendations people use, then runs study sessions. The `researcher` answers a question: it surveys the literature with its critics and writes a cited report. The mission is the contract between them and every later step: each of its sections exists because a later step reads it. Worker agents cover one-shot jobs that need fresh eyes or parallel runs: `source-finder`, `claim-checker` and `grader`. Every harness gets leads as role skills, since a harness agent can't hold a conversation. Commands cover anything a program can do exactly:
+- `puck sources` searches OpenAlex, Semantic Scholar, arXiv and Open Library, walks citation graphs, and checks quotes against saved text.
+- `puck topic check` fails any wiki claim that doesn't trace to a source, and any source that doesn't resolve.
+- `puck learn next` picks the next concept by its prerequisites.
+- `puck learn check` runs an exercise's tests.
+
+There is no teacher agent. Teaching is a conversation, and a subagent can't hold one, so the main session runs `teach`.
+
+| The user wants to… | Skills, in order |
+|---|---|
+| Research a question | The `researcher` lead: `scope` → `field-map` → `literature` → `report`, as one task of type `research` whose steps are the stages |
+| Plan the learning of a subject | The `professor` lead: `scope` → `curriculum` → `roadmap`, as one task of type `learn` |
+| Study it | `teach`, calling `practice` and `visualize`; no task, since the topic folder holds the state |
+| Change code in a project | The `engineer` lead: `onboard` → `plan` → `task` → `commit` |
+| Add or change a Puck skill or agent | The `constructor` lead: classify → design → write → review → activate |
+| File a source, or ask the notes | `kb` |
+
+Concept statuses are `unseen`, `introduced`, `practised`, `recalled-later` and `can-explain`. They record what happened, so none can be read as mastery.
+
+**Not built yet:** spaced repetition with py-fsrs (next), paid search APIs, an MCP server and cross-host memory.
 
 ## Architecture
 
@@ -80,8 +101,8 @@ flowchart TB
 
     subgraph behaviour["context/ behaviour"]
         rules["instructions/ and profile.md"]
-        skills["skills/: task, plan, review"]
-        agents["agents/: reviewer, retro"]
+        skills["skills/: task, plan, review, onboard, commit; scope, kb; curriculum, roadmap, teach, practice, visualize; field-map, literature, report"]
+        agents["agents/: leads professor, researcher, engineer, constructor, each with a workflow; workers source-finder, claim-checker, grader, reviewer, retro"]
         hookrules["hooks.yaml: resume, close-guard"]
     end
 
@@ -110,9 +131,8 @@ flowchart TB
     state["state/: task registry, locks, hook log"]
 
     subgraph data["context/ data"]
-        knowledge["knowledge/: not created yet"]
+        knowledge["knowledge/: one folder per topic"]
         archive["tasks/: past retros"]
-        proposals["proposals/: waiting for your OK"]
     end
 
     behaviour --> build
@@ -130,8 +150,7 @@ flowchart TB
 
     retro -. "skill drafts" .-> skills
     retro -. "topic facts" .-> knowledge
-    retro -. "rules, patches, promotions" .-> proposals
-    proposals -. "one list at close" .-> you
+    retro -. "skill drafts, one list at close" .-> you
     you -. "approve" .-> behaviour
 ```
 
@@ -144,31 +163,27 @@ puck/
   context/             # source of truth for everything the LLM sees
     instructions/      # global.md, the always-on rules
     profile.md         # hand-written facts about you
-    skills/            # task, plan, review; each has SKILL.md and evals/
-    agents/            # reviewer, retro
+    skills/            # each has SKILL.md and evals/
+    agents/            # leads: professor, researcher, engineer, constructor; workers: source-finder, claim-checker, grader, reviewer, retro
     hooks.yaml         # resume, close-guard
-    templates/         # SPEC, skill, agent, retro
-    knowledge/         # study material; not created yet
+    templates/         # SPEC, skill, agent (worker), agent-lead, retro; mission-learn, mission-research, map, path, report, session
+    knowledge/<topic>/ # mission, map, path, report, sources.json, raw/, wiki/, sessions/, exercises/, visuals/
     tasks/             # archived retros; created at first close
-    proposals/         # changes waiting for your OK; done/ is gitignored
   docs/
+    concepts.md        # every term, and the spec for skills, agents and workflows
     design.md          # this file
+    features.md        # every skill, agent, command and hook
     spikes.md          # what's been tested on each host
     research/          # evidence behind the design
   src/
-    core/              # harness-neutral
-      build.py         # load context, run adapters, write dist/
-      context.py       # task pack
+    core/              # harness-neutral, layered: each part imports only the ones above it
+      common/          # model, paths, store, errors
+      primitives/      # build, lint, skills: context/ into host packages
+      tools/work/      # tasks, pack, scratch: the task loop
+      tools/learning/  # topics, kb, exercises, sources/: research and study
       hooks.py         # hook entry point and handlers
-      lint.py          # checks on primitives and budgets
-      model.py         # shared types
-      paths.py         # the folder layout
-      scratch.py       # experiments and cleanup
-      skills.py        # skill lifecycle and proposals
-      store.py         # locked, atomic writes
-      tasks.py         # tasks, steps, checks and close
     adapters/          # base.py is the generic harness; claude.py, copilot.py
-    cli/               # main.py, the puck command
+    cli/               # main.py dispatches; commands/ mirrors core
   tests/               # with fixtures/ and golden/
   dist/                # generated per-host packages, gitignored
   state/               # task registry, locks, hook log, gitignored; also holds

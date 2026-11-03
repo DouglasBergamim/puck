@@ -8,8 +8,11 @@ import pytest
 
 import adapters
 from adapters.base import PluginAdapter
-from core import build, hooks, paths, tasks
-from core.model import Event
+from core.common import paths
+from core.common.model import Event
+from core.primitives import build
+from core.tools.work import tasks
+from core import hooks
 
 TESTS = Path(__file__).parent
 FIXTURES = TESTS / "fixtures"
@@ -62,7 +65,7 @@ def test_generic_gives_any_harness_agents_md_and_skills():
 def test_core_never_names_a_harness():
     names = re.compile(r"claude|copilot|cursor|codex|gemini", re.IGNORECASE)
     source = TESTS.parent / "src"
-    offenders = [str(p) for folder in ("core", "cli") for p in (source / folder).glob("*.py")
+    offenders = [str(p) for folder in ("core", "cli") for p in (source / folder).rglob("*.py")
                  if names.search(p.read_text())]
     assert offenders == []
 
@@ -104,3 +107,24 @@ def test_home_finds_the_repo_without_the_variable(monkeypatch):
     monkeypatch.delenv("PUCK_HOME", raising=False)
     assert paths.home() == TESTS.parent
     assert paths.skills().is_dir()
+
+
+def test_claude_launch_grants_puck_commands_and_topic_writes():
+    from pathlib import PurePosixPath
+    command = adapters.get("claude").launch_command(
+        PurePosixPath("/h/dist/claude"), PurePosixPath("/h"), ("puck sources",), ("/puck:teach x",))
+    assert command[:2] == ["claude", "/puck:teach x"]
+    assert command[command.index("--add-dir") + 1] == "/h"
+    rules = command[command.index("--allowedTools") + 1].split(",")
+    assert "Bash(puck sources *)" in rules and "Edit(//h/context/knowledge/**)" in rules
+    assert not any("proposal" in rule for rule in rules)
+
+
+def test_claude_install_links_the_plugin_and_grants_the_same_rules_as_launch():
+    from pathlib import PurePosixPath
+    claude = adapters.get("claude")
+    plan = claude.install(PurePosixPath("/h"), ("puck sources",))
+    assert plan.link == ".claude/skills/puck" and plan.settings == ".claude/settings.json"
+    assert list(plan.allow) == claude.allow_rules(PurePosixPath("/h"), ("puck sources",))
+    assert plan.directories == ("/h",) and plan.env == (("PUCK_HOME", "/h"),)
+    assert adapters.get("generic").install(PurePosixPath("/h")) is None

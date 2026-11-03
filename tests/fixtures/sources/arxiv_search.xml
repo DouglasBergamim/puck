@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/SNkiJG8sjIx0J4LYEdKH03WBKjQ</id>
+  <title>arXiv Query: search_query=all:attention AND all:survey&amp;id_list=&amp;start=0&amp;max_results=2</title>
+  <updated>2026-11-02T15:15:30Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:attention+AND+all:survey&amp;start=0&amp;max_results=2&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+  <opensearch:totalResults>2803</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2103.01498v2</id>
+    <title>A Survey On Universal Adversarial Attack</title>
+    <updated>2022-01-04T09:52:21Z</updated>
+    <link href="https://arxiv.org/abs/2103.01498v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2103.01498v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The intriguing phenomenon of adversarial examples has attracted significant attention in machine learning and what might be more surprising to the community is the existence of universal adversarial perturbations (UAPs), i.e. a single perturbation to fool the target DNN for most images. With the focus on UAP against deep classifiers, this survey summarizes the recent progress on universal adversarial attacks, discussing the challenges from both the attack and defense sides, as well as the reason for the existence of UAP. We aim to extend this work as a dynamic survey that will regularly update its content to follow new works regarding UAP or universal attack in a wide range of domains, such as image, audio, video, text, etc. Relevant updates will be discussed at: https://bit.ly/2SbQlLG. We welcome authors of future works in this field to contact us for including your new finding.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-03-02T06:35:09Z</published>
+    <arxiv:comment>Accepted by IJCAI 2021, survey track: https://www.ijcai.org/proceedings/2021/635</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <arxiv:journal_ref>International Joint Conferences on Artificial Intelligence (IJCAI) 2021, survey track</arxiv:journal_ref>
+    <author>
+      <name>Chaoning Zhang</name>
+    </author>
+    <author>
+      <name>Philipp Benz</name>
+    </author>
+    <author>
+      <name>Chenguo Lin</name>
+    </author>
+    <author>
+      <name>Adil Karjauv</name>
+    </author>
+    <author>
+      <name>Jing Wu</name>
+    </author>
+    <author>
+      <name>In So Kweon</name>
+    </author>
+    <arxiv:doi>10.24963/ijcai.2021/635</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.24963/ijcai.2021/635" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.15459v1</id>
+    <title>Not All Attention Is Equal: A Quantitative Survey of the EEI Trade-off</title>
+    <updated>2026-08-16T00:37:38Z</updated>
+    <link href="https://arxiv.org/abs/2608.15459v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.15459v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Attention mechanisms have driven machine learning for a decade, from neural machine translation to language models that do general-purpose reasoning. This survey covers four connected threads: their formulation for sequence-to-sequence tasks, adaptation to computer vision, efficiency innovations that address the quadratic bottleneck, and advances in interpretability. We define three criteria: efficiency, expressiveness, and interpretability, and compare twenty-one methods using an EEI scoring framework. Scores come from a single rater with an assumed +/-1-point perturbation range. A deterministic Monte Carlo analysis with 200,000 samples shows that, under this perturbation model, rank changes of more than one position occur in 67-70% of samples on average. A rank-matched null model reproduces a similar stability profile, so the results support coarse tier-level comparisons rather than fine-grained rankings. The survey traces attention from Bahdanau-Luong alignment through the Transformer and into vision architectures. It reviews fixed and learned sparse attention, linear attention, IO-aware exact algorithms including FlashAttention, and state-space alternatives including Mamba. It also covers induction heads, superposition, and the attention-SSM duality. We further provide a structured narrative review, a benchmark synthesis with cross-study caveats, a five-problem research gap analysis, and a 2015-2026 evolution timeline. We conclude by framing attention research as an expansion of the efficiency-expressiveness-interpretability frontier and identifying future directions including unified efficiency benchmarks, learned routing for hybrid architectures, length generalization, and scalable mechanistic interpretability.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-16T00:37:38Z</published>
+    <arxiv:comment>53 pages, 8 figures, 16 tables. Code and analysis artifacts: https://github.com/Nixon-H/not-all-attention-is-equal</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Aditya Singh</name>
+    </author>
+  </entry>
+</feed>

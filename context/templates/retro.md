@@ -6,7 +6,7 @@ Outcome: done | partial | abandoned
 
 | Type | Finding | Landed in |
 |---|---|---|
-| procedure, topic, project, rule or one-off | The finding, with its source | Path or proposal |
+| procedure, topic or one-off | The finding, with its source | Path, or draft for the user |
 
 ## What failed
 

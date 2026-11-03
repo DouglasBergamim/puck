@@ -1,7 +1,7 @@
 import json
 import multiprocessing
 
-from core import store
+from core.common import store
 
 
 def _write_notes(args):

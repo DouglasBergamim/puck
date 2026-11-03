@@ -5,9 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from core import context, paths, scratch, skills, store, tasks
+from core.common import paths, store
+from core.common.errors import PuckError
+from core.primitives import skills
+from core.tools.work import pack, scratch, tasks
 from tests.test_hooks import call
-from tests.test_build_and_lint import template, add_skill
+from tests.test_build_and_lint import template, add_skill, write_case
 
 
 def git(cwd, *args):
@@ -141,16 +144,14 @@ def test_pack_is_capped_paths_only_and_ranked(puck_home):
     paths.retros().mkdir(parents=True)
     for number in range(100):
         (paths.retros() / f"login-{number}.md").write_text("# Login retro\n\nFixed a login thing\n")
-    text = context.pack("fix the login bug")
-    assert len(text) <= context.PACK_LIMIT
+    text = pack.pack("fix the login bug")
+    assert len(text) <= pack.PACK_LIMIT
     assert "login-debug" in text and "[retro]" in text
 
 
-def test_pack_excludes_drafts_and_mentions_proposals(puck_home):
+def test_pack_excludes_drafts(puck_home):
     add_skill(puck_home, "login-debug", template("login-debug"))
-    skills.propose("rule" if False else "instruction", "t", "global", "Be brief", "Be brief.")
-    text = context.pack("login")
-    assert "login-debug" not in text and "1 proposal" in text
+    assert "login-debug" not in pack.pack("login")
 
 
 def test_scratch_numbers_experiments_and_gc_keeps_recent(puck_home, repo):
@@ -169,52 +170,128 @@ def test_scratch_numbers_experiments_and_gc_keeps_recent(puck_home, repo):
 def test_new_skill_is_a_draft_and_refuses_duplicates(puck_home):
     path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
     assert "status: draft" in (path / "SKILL.md").read_text()
-    with pytest.raises(tasks.TaskError, match="skill-patch"):
+    with pytest.raises(PuckError, match="Draft a change"):
         skills.new("deploy-steps", "again", "t2")
 
 
-def test_parallel_proposals_stay_separate(puck_home):
-    paths = {skills.propose("instruction", "t", "global", "same", f"body {n}") for n in range(5)}
-    assert len(paths) == 5
-
-
-def test_instruction_proposal_respects_budget(puck_home):
-    good = skills.propose("instruction", "t", "global", "Short rule", "- Short rule.")
-    skills.resolve(good.stem, approve=True)
-    assert "Short rule" in paths.instructions().read_text()
-    assert not good.exists() and (paths.proposals() / "done" / good.name).exists()
-    bad = skills.propose("instruction", "t", "global", "Huge", "x" * 7000)
-    with pytest.raises(tasks.TaskError, match="Over budget"):
-        skills.resolve(bad.stem, approve=True)
-    assert bad.exists() and "xxxx" not in paths.instructions().read_text()
-
-
-def test_reject_changes_nothing(puck_home):
-    before = paths.instructions().read_text()
-    proposal = skills.propose("instruction", "t", "global", "No", "- No.")
-    skills.resolve(proposal.stem, approve=False)
-    assert paths.instructions().read_text() == before
-
-
-def test_promote_activates_commits_and_reverts_cleanly(puck_home):
+def test_promote_commits_only_the_skill(puck_home, monkeypatch):
     git(puck_home, "init", "-q", "-b", "main")
-    git(puck_home, "config", "user.name", "t")
-    git(puck_home, "config", "user.email", "t@t")
-    git(puck_home, "add", "-A")
-    git(puck_home, "commit", "-q", "-m", "base")
+    git(puck_home, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "x")
+    (puck_home / "unrelated.txt").write_text("the user's work in progress\n")
+    git(puck_home, "add", "unrelated.txt")
     path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
-    (path / "evals" / "triggers").mkdir(parents=True)
-    (path / "evals" / "triggers" / "prompt.md").write_text("hi\n")
-    skills.promote("deploy-steps", run_evals=False)
-    assert (puck_home / "dist/claude/skills/deploy-steps/SKILL.md").exists()
-    assert (puck_home / "dist/claude/evals/deploy-steps-triggers/prompt.md").exists()
-    git(puck_home, "revert", "--no-edit", "HEAD")
-    from core import build
-    build.build_all(puck_home)
-    assert not (puck_home / "dist/claude/skills/deploy-steps").exists()
-
-
-def test_promote_needs_evals(puck_home):
-    skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
-    with pytest.raises(tasks.TaskError, match="no eval cases"):
+    with pytest.raises(PuckError, match="needs evals/triggers"):
         skills.promote("deploy-steps", run_evals=False)
+    for case, fired in (("triggers", 1), ("ignores-build", 0)):
+        write_case(path / "evals" / case, "deploy-steps", fired)
+    for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
+    skills.promote("deploy-steps", run_evals=False)
+    shown = subprocess.run(["git", "-C", str(puck_home), "show", "--name-only", "--format="],
+                           capture_output=True, text=True, check=True).stdout
+    assert "deploy-steps/SKILL.md" in shown and "unrelated.txt" not in shown
+    staged = subprocess.run(["git", "-C", str(puck_home), "diff", "--cached", "--name-only"],
+                            capture_output=True, text=True, check=True).stdout
+    assert staged.strip() == "unrelated.txt"
+
+
+RESEARCH_LEAD = """---
+name: scout
+description: A lead. Use when testing.
+mode: lead
+tools: [read]
+model: strong
+skills: [scope]
+agents: []
+workflow:
+  - stage: scope
+    skill: scope
+    delivers: mission.md
+    check: puck topic check {topic} --has mission
+  - stage: talk
+    delivers: a chat
+---
+## Role
+R.
+
+## Context
+C.
+
+## Rules
+R.
+
+## Workflow
+1. **Scope.** 2. **Talk.**
+
+## Boundaries
+B.
+"""
+
+
+def test_agent_workflow_seeds_steps_and_points_spec_at_mission(puck_home, repo):
+    (paths.agents(puck_home) / "scout.md").write_text(RESEARCH_LEAD)
+    topic = paths.knowledge(puck_home) / "graph-theory"
+    topic.mkdir(parents=True)
+    (topic / "mission.md").write_text("# Mission\n")
+    task = tasks.start("research graphs", "research", repo, agent="scout", topic="Graph Theory")
+    assert [s["check"] for s in task["steps"]] == ["puck topic check graph-theory --has mission"]
+    assert task["topic"] == "graph-theory"
+    assert task["steps"][0]["desc"] == "scope: mission.md"
+    spec = (Path(task["folder"]) / "SPEC.md").read_text()
+    assert "scout's workflow" in spec and "mission.md" in spec
+    assert "Workflow: scope (scope) → talk" in pack.pack("x", workflow=tasks.lead("scout").workflow)
+
+
+def test_agent_workflow_needs_its_topic(puck_home, repo):
+    (paths.agents(puck_home) / "scout.md").write_text(RESEARCH_LEAD)
+    with pytest.raises(tasks.TaskError, match="pass --topic"):
+        tasks.start("x", "research", repo, agent="scout")
+    with pytest.raises(tasks.TaskError, match="no mission"):
+        tasks.start("x", "research", repo, agent="scout", topic="missing")
+    with pytest.raises(tasks.TaskError, match="No lead 'nobody'"):
+        tasks.start("x", "build", repo, agent="nobody")
+
+
+def test_promote_requires_and_commits_the_features_row(puck_home, monkeypatch):
+    for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
+    git(puck_home, "init", "-q", "-b", "main")
+    features = puck_home / "docs" / "features.md"
+    features.parent.mkdir()
+    features.write_text("# Features\n")
+    git(puck_home, "add", "docs/features.md")
+    git(puck_home, "commit", "-q", "-m", "x")
+    path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
+    for case, fired in (("triggers", 1), ("ignores-build", 0)):
+        write_case(path / "evals" / case, "deploy-steps", fired)
+    with pytest.raises(PuckError, match="Add a row for 'deploy-steps'"):
+        skills.promote("deploy-steps", run_evals=False)
+    assert "status: draft" in (path / "SKILL.md").read_text()
+    features.write_text("# Features\n\n| `deploy-steps` | Deploys |\n")
+    skills.promote("deploy-steps", run_evals=False)
+    shown = subprocess.run(["git", "-C", str(puck_home), "show", "--name-only", "--format="],
+                           capture_output=True, text=True, check=True).stdout
+    assert "docs/features.md" in shown and "deploy-steps/SKILL.md" in shown
+
+
+def test_promote_rolls_back_when_the_commit_is_refused(puck_home, monkeypatch):
+    for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
+    git(puck_home, "init", "-q", "-b", "main")
+    git(puck_home, "commit", "-q", "--allow-empty", "-m", "x")
+    hooks = puck_home / "refuse"
+    hooks.mkdir()
+    (hooks / "pre-commit").write_text("#!/bin/sh\necho 'lint says no' >&2\nexit 1\n")
+    (hooks / "pre-commit").chmod(0o755)
+    git(puck_home, "config", "core.hooksPath", str(hooks))
+    path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
+    for case, fired in (("triggers", 1), ("ignores-build", 0)):
+        write_case(path / "evals" / case, "deploy-steps", fired)
+    before = (path / "SKILL.md").read_text()
+    with pytest.raises(PuckError, match="(?s)commit was refused.*lint says no"):
+        skills.promote("deploy-steps", run_evals=False)
+    assert (path / "SKILL.md").read_text() == before  # draft again, version untouched
+    staged = subprocess.run(["git", "-C", str(puck_home), "diff", "--cached", "--name-only"],
+                            capture_output=True, text=True).stdout
+    assert staged == ""
+    assert not (puck_home / "dist/claude/skills/deploy-steps").exists()

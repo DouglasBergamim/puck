@@ -11,3 +11,4 @@ Not yet tested on a real session.
 | edit | edit, create |
 | web | web_fetch |
 | subagents | task |
+| ask | your harness's equivalent |
