@@ -10,7 +10,7 @@ from core.common import paths, store
 from core.common.errors import PuckError
 
 TYPES = {"build", "learn", "research", "plan"}
-FINDING_TYPES = ("procedure", "topic", "project", "rule", "one-off")
+FINDING_TYPES = ("procedure", "topic", "one-off")
 OUTPUT_PREVIEW = 4_000
 
 

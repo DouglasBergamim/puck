@@ -31,12 +31,18 @@ def topic_command(args) -> int:
     elif args.action == "list":
         for name in topics.all_topics():
             print(name)
-    elif args.action == "show":
-        print(topics.status_report(args.topic))
     elif args.action == "check":
-        problems = topics.check(args.topic, [k.strip() for k in args.has.split(",")])
-        return _report(problems, [], f"{args.topic}: has {args.has}")
+        return check_topic(args)
     return 0
+
+
+def check_topic(args) -> int:
+    """One validator per topic: the named files, the sources, then the wiki."""
+    required = [k.strip() for k in args.has.split(",")] if args.has else []
+    errors = topics.check(args.topic, required)
+    source_errors, warnings = verify.verify(args.topic, not args.no_links)
+    wiki_errors, wiki_warnings = kb.lint(args.topic)
+    return _report(errors + source_errors + wiki_errors, warnings + wiki_warnings, f"{args.topic}: check passes")
 
 
 def sources_command(args) -> int:
@@ -74,22 +80,17 @@ def sources_command(args) -> int:
             role = f"[{source['role']}] " if source.get("role") else ""
             print(f"{source['id']}  {role}{source.get('year') or 'n.d.'}  {source['title']}")
         return 0
-    if args.action == "fetch":
-        path, notes = verify.fetch(args.topic, args.id, args.force)
-        for note in notes:
-            print(f"note: {note}")
-        print(path)
-        return 0
-    if args.action == "excerpt":
+    # fetch
+    if args.file:
+        if not args.origin:
+            raise PuckError("--file needs --origin: where the text came from, e.g. a URL and pages.")
         print(verify.excerpt(args.topic, args.id, _read(args.file), args.origin, args.force))
         return 0
-    errors, warnings = verify.verify(args.topic, not args.no_links)
-    return _report(errors, warnings, f"{args.topic}: sources verified")
-
-
-def kb_command(args) -> int:
-    errors, warnings = kb.lint(args.topic)
-    return _report(errors, warnings, f"{args.topic}: wiki passes")
+    path, notes = verify.fetch(args.topic, args.id, args.force)
+    for note in notes:
+        print(f"note: {note}")
+    print(path)
+    return 0
 
 
 def learn_command(args) -> int:
@@ -112,14 +113,12 @@ def learn_command(args) -> int:
             raise PuckError(f"No file {path}.")
         webbrowser.open(path.as_uri())
         print(f"Opened {path}")
+    elif args.action == "check":
+        passed, output = exercises.check(args.topic, args.id)
+        print("PASS" if passed else "FAIL")
+        print(output)
+        return 0 if passed else 1
     return 0
-
-
-def exercise_command(args) -> int:
-    passed, output = exercises.check(args.topic, args.id)
-    print("PASS" if passed else "FAIL")
-    print(output)
-    return 0 if passed else 1
 
 
 def register(commands) -> None:
@@ -128,10 +127,12 @@ def register(commands) -> None:
     topic = topic_parser.add_subparsers(dest="action", required=True)
     topic.add_parser("new").add_argument("name")
     topic.add_parser("list")
-    topic.add_parser("show").add_argument("topic")
-    check = topic.add_parser("check", help="fail unless the named files are written")
+    check = topic.add_parser(
+        "check", help="fail unless the named files are written, sources resolve and quotes match raw/, "
+                      "and every wiki claim traces to a source")
     check.add_argument("topic")
-    check.add_argument("--has", required=True, help="comma-separated: mission, map, path, sources")
+    check.add_argument("--has", help="comma-separated: mission, map, path, sources")
+    check.add_argument("--no-links", action="store_true", help="skip network checks")
 
     source_parser = commands.add_parser(
         "sources", help="find, record and verify papers and books",
@@ -161,24 +162,13 @@ def register(commands) -> None:
     add.add_argument("--quote", default="", help="a passage copied exactly from the source")
     add.add_argument("--group", default="", help="independence group: sources that echo one origin share it")
     source.add_parser("list").add_argument("topic")
-    fetch = source.add_parser("fetch", help="save the abstract or page text to raw/")
+    fetch = source.add_parser(
+        "fetch", help="save a source's text to raw/: its abstract or page, or with --file text you read yourself")
     fetch.add_argument("topic")
     fetch.add_argument("id")
+    fetch.add_argument("--file", help="text you read yourself, e.g. from a PDF; a file, or - for stdin")
+    fetch.add_argument("--origin", help="with --file: where the text came from, e.g. URL and pages")
     fetch.add_argument("--force", action="store_true")
-    excerpt = source.add_parser("excerpt", help="save text you read yourself, e.g. from a PDF")
-    excerpt.add_argument("topic")
-    excerpt.add_argument("id")
-    excerpt.add_argument("--file", required=True, help="a file, or - for stdin")
-    excerpt.add_argument("--origin", required=True, help="where the text came from: URL and pages")
-    excerpt.add_argument("--force", action="store_true")
-    verify_parser = source.add_parser("verify", help="fail unless sources resolve and quotes match raw/")
-    verify_parser.add_argument("topic")
-    verify_parser.add_argument("--no-links", action="store_true", help="skip network checks")
-
-    kb_parser = commands.add_parser("kb", help="the topic wiki")
-    kb_parser.set_defaults(run=kb_command)
-    kb_actions = kb_parser.add_subparsers(dest="action", required=True)
-    kb_actions.add_parser("lint", help="fail unless every claim traces to a source").add_argument("topic")
 
     learn_parser = commands.add_parser("learn", help="study sessions")
     learn_parser.set_defaults(run=learn_command)
@@ -190,10 +180,6 @@ def register(commands) -> None:
     record.add_argument("--file", required=True, help="the record, or - for stdin")
     record.add_argument("--status", action="append", help="concept=status; repeatable")
     learn.add_parser("open", help="open an HTML visual in the browser").add_argument("path")
-
-    exercise_parser = commands.add_parser("exercise", help="practice exercises")
-    exercise_parser.set_defaults(run=exercise_command)
-    exercise = exercise_parser.add_subparsers(dest="action", required=True)
-    exercise_check = exercise.add_parser("check", help="run a code exercise's tests; only exit 0 passes")
+    exercise_check = learn.add_parser("check", help="run a code exercise's tests; only exit 0 passes")
     exercise_check.add_argument("topic")
-    exercise_check.add_argument("id")
+    exercise_check.add_argument("id", help="the exercise folder name")

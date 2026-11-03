@@ -33,7 +33,14 @@ def resume(event: Event) -> Result:
 
     Plugins can't carry instruction files, so this hook is how the rules arrive.
     """
-    parts = [build.load_instructions(paths.home())]
+    home = paths.home()
+    parts = [build.load_instructions(home), f"Puck's home folder, written `$PUCK_HOME` in skills and agents, is `{home}`."]
+    leads = [agent for agent in build.load_agents(home) if agent.mode == "lead"]
+    if leads:
+        names = ", ".join(f"{agent.name}" for agent in leads)
+        parts.append(f"Agents the user can pick and talk to: {names}. Each is a skill of the same name. "
+                     "When the user asks for one, load that skill and take its role in this conversation. "
+                     "Never start one as a background agent.")
     parts += [tasks.checklist(plan) for plan in _open_plans(event)]
     return Result(context="\n\n".join(parts))
 
@@ -47,7 +54,7 @@ def close_guard(event: Event) -> Result:
             return Result(decision="block", reason=(
                 f"Task {task['id']} passes its checks but is still open. Run the retro agent "
                 f"if findings exist, then `puck task close --task {task['id']} --outcome done`, "
-                "and list any proposals for the user."))
+                "and show the user any skill drafts it made."))
     return Result()
 
 

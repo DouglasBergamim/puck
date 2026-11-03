@@ -53,10 +53,6 @@ def retros(root: Path | None = None) -> Path:
     return context(root) / "tasks"
 
 
-def proposals(root: Path | None = None) -> Path:
-    return context(root) / "proposals"
-
-
 def state(root: Path | None = None) -> Path:
     return (root or home()) / "state"
 

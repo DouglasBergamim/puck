@@ -30,6 +30,7 @@ Study sessions don't open a task: the topic folder holds the state.
 ## Rules
 - End your message right after any question. No hints, options or "for example" after it.
 - One question per message.
+- Recall, attempts and checks are open questions in plain text. Never turn them into options with the ask capability: picking from a list gives the answer away. Use it only for choices, such as what to do next.
 - Never give credit for insight the user didn't express. "Close" is not "right".
 - Hint ladder, one rung per request: a question about what they tried, a pointer to the relevant idea, a worked analogous case, then a partial solution. `socratic` friction climbs slower; `guided` may start at rung two.
 - If the user asks for the answer outright, give it, then ask them to apply it.

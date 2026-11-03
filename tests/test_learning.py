@@ -177,6 +177,15 @@ def test_a_grounded_page_passes_and_gets_indexed(topic):
     assert "transformer.md" in (topics.folder(topic) / "wiki" / "index.md").read_text()
 
 
+def test_list_items_inherit_a_cited_lead_in(topic):
+    add_with_raw(topic, "Section 6 covers entropy.")
+    write_page(topic, "reading.md", "# Reading\n\nConcepts: entropy, capacity.\n\nWhere to read [s1]:\n"
+               "- Section 6: entropy.\n\nAn uncited paragraph.\n- An uncited item after it.\n\nLimits:\n\n"
+               "My advice [not in sources: ours].\n\nSupported by s1 without brackets.\n")
+    errors, _ = kb.lint(topic)
+    assert [e.split(":")[1] for e in errors] == ["8", "9", "15"]
+
+
 def test_lint_catches_each_kind_of_ungrounded_claim(topic):
     add_with_raw(topic, "The model reached 28.4 BLEU.")
     write_page(topic, "bad.md",
@@ -267,4 +276,12 @@ def test_cli_creates_and_checks_a_topic(puck_home, capsys):
     assert cli.main(["topic", "list"]) == 0
     assert "linear-algebra" in capsys.readouterr().out
     assert cli.main(["topic", "check", "linear-algebra", "--has", "mission"]) == 1
-    assert cli.main(["topic", "show", "nope"]) == 1
+
+
+def test_topic_check_runs_every_check_for_the_topic(topic, capsys):
+    source_id = add_with_raw(topic, "Real text.", quote="text the source never said")
+    assert cli.main(["sources", "fetch", topic, source_id, "--file", "-"]) == 1  # --origin is required
+    write_page(topic, "page.md", "# Page\n\nNo citation here.\n")
+    assert cli.main(["topic", "check", topic, "--has", "mission", "--no-links"]) == 1
+    out = capsys.readouterr().out
+    assert "mission.md" in out and "quote not found" in out and "no citation" in out

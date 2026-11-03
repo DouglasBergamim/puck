@@ -1,6 +1,6 @@
 # Puck
 
-A layer in front of any agent harness that optimises the context an LLM gets and improves its tools. Claude Code and Copilot are the first adapters, not the scope. The design is in `docs/design.md`.
+A layer in front of any agent harness that optimises the context an LLM gets and improves its tools. Claude Code and Copilot are the first adapters, not the scope. The design is in `docs/design.md`; every skill, agent, command and hook is listed in `docs/features.md`. Update that list when they change.
 
 ## Commands
 

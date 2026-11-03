@@ -149,11 +149,9 @@ def test_pack_is_capped_paths_only_and_ranked(puck_home):
     assert "login-debug" in text and "[retro]" in text
 
 
-def test_pack_excludes_drafts_and_mentions_proposals(puck_home):
+def test_pack_excludes_drafts(puck_home):
     add_skill(puck_home, "login-debug", template("login-debug"))
-    skills.propose("rule" if False else "instruction", "t", "global", "Be brief", "Be brief.")
-    text = pack.pack("login")
-    assert "login-debug" not in text and "1 proposal" in text
+    assert "login-debug" not in pack.pack("login")
 
 
 def test_scratch_numbers_experiments_and_gc_keeps_recent(puck_home, repo):
@@ -172,52 +170,5 @@ def test_scratch_numbers_experiments_and_gc_keeps_recent(puck_home, repo):
 def test_new_skill_is_a_draft_and_refuses_duplicates(puck_home):
     path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
     assert "status: draft" in (path / "SKILL.md").read_text()
-    with pytest.raises(PuckError, match="skill-patch"):
+    with pytest.raises(PuckError, match="Draft a change"):
         skills.new("deploy-steps", "again", "t2")
-
-
-def test_parallel_proposals_stay_separate(puck_home):
-    paths = {skills.propose("instruction", "t", "global", "same", f"body {n}") for n in range(5)}
-    assert len(paths) == 5
-
-
-def test_instruction_proposal_respects_budget(puck_home):
-    good = skills.propose("instruction", "t", "global", "Short rule", "- Short rule.")
-    skills.resolve(good.stem, approve=True)
-    assert "Short rule" in paths.instructions().read_text()
-    assert not good.exists() and (paths.proposals() / "done" / good.name).exists()
-    bad = skills.propose("instruction", "t", "global", "Huge", "x" * 7000)
-    with pytest.raises(PuckError, match="Over budget"):
-        skills.resolve(bad.stem, approve=True)
-    assert bad.exists() and "xxxx" not in paths.instructions().read_text()
-
-
-def test_reject_changes_nothing(puck_home):
-    before = paths.instructions().read_text()
-    proposal = skills.propose("instruction", "t", "global", "No", "- No.")
-    skills.resolve(proposal.stem, approve=False)
-    assert paths.instructions().read_text() == before
-
-
-def test_promote_activates_commits_and_reverts_cleanly(puck_home):
-    git(puck_home, "init", "-q", "-b", "main")
-    git(puck_home, "config", "user.name", "t")
-    git(puck_home, "config", "user.email", "t@t")
-    git(puck_home, "add", "-A")
-    git(puck_home, "commit", "-q", "-m", "base")
-    path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
-    (path / "evals" / "triggers").mkdir(parents=True)
-    (path / "evals" / "triggers" / "prompt.md").write_text("hi\n")
-    skills.promote("deploy-steps", run_evals=False)
-    assert (puck_home / "dist/claude/skills/deploy-steps/SKILL.md").exists()
-    assert (puck_home / "dist/claude/evals/deploy-steps-triggers/prompt.md").exists()
-    git(puck_home, "revert", "--no-edit", "HEAD")
-    from core.primitives import build
-    build.build_all(puck_home)
-    assert not (puck_home / "dist/claude/skills/deploy-steps").exists()
-
-
-def test_promote_needs_evals(puck_home):
-    skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
-    with pytest.raises(PuckError, match="no eval cases"):
-        skills.promote("deploy-steps", run_evals=False)

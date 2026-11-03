@@ -12,7 +12,7 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 
 **History belongs to the host.** Puck keeps no session records. It tracks plans and their steps, and hooks restore a plan from the working directory.
 
-**`context/` is the source of truth.** Behaviour (instructions, skills, agents, hooks, profile) is linted and built into per-host packages. Data (knowledge, past retros, proposals) only informs a task when it's read.
+**`context/` is the source of truth.** Behaviour (instructions, skills, agents, hooks, profile) is linted and built into per-host packages. Data (knowledge, past retros) only informs a task when it's read.
 
 **Adapters keep hosts apart.** `src/core` knows no harness by name. Each harness gets one pure adapter that renders `context/` at build time and translates hook traffic at run time. The base `Adapter` is the generic harness, so anything reading `AGENTS.md` and `.agents/skills/` works without new code.
 
@@ -53,7 +53,7 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 3. **Work.** Findings go through `puck note`, and uncertain ideas are tried in scratch.
 4. **Verify.** `puck task check` runs each check, and only a real exit 0 passes a step. Non-trivial changes also get the `reviewer` agent.
 5. **Retro.** With findings, a fresh `retro` agent classifies them, and `puck task close` refuses to finish without its output.
-6. **Close.** The retro is archived and proposals go to you as one short list. If the agent forgets to close, the `close-guard` hook blocks once to remind it.
+6. **Close.** The retro is archived, and any skill drafts go to you as one short list. If the agent forgets to close, the `close-guard` hook blocks once to remind it.
 
 **Capture.** Risk decides how each finding lands. Standing instructions never change without your approval.
 
@@ -62,17 +62,17 @@ The evidence is in `docs/research/`. What has actually run on each host is in `d
 | One-off | Task retro | Automatic |
 | Fact about a topic | `knowledge/` wiki page with its source | Automatic |
 | New procedure | Skill with status `draft`, which no build includes | Draft is automatic; promotion needs approval, then runs lint, evals, build and commit |
-| Change to a skill | Patch in `proposals/` | Approval |
-| Fact about a project | That project's `AGENTS.md` | Approval |
-| Rule for all your work | `instructions/global.md`, checked against its budget | Approval |
+| Change to a skill | A diff in the task's `scratch/drafts/` | Approval, then `git apply` and build |
+
+Instructions and project `AGENTS.md` files are never changed by the retro. They change rarely, so you edit them yourself.
 
 **Parallel work.** The host runs the agents, and Puck keeps them from colliding. There's no global active task: hooks and commands find the plan from the working directory, so each worktree from `puck task start --worktree` sees only its own. Shared writes go through file locks. Merging stays your decision.
 
-**Research and learning.** Each topic gets a folder in `context/knowledge/<topic>/`, which holds its state on every host. Skills cover the steps that need the user: `scope`, `field-map`, `literature`, `reading-path`, `teach`, `practice`, `visualize` and `kb`. Agents cover one-shot jobs that need fresh eyes: `researcher`, `claim-checker` and `grader`. Commands cover anything a program can do exactly:
+**Research and learning.** Each topic gets a folder in `context/knowledge/<topic>/`, which holds its state on every host. Skills cover the steps that need the user: `scope`, `field-map`, `literature`, `reading-path`, `teach`, `practice`, `visualize` and `kb`. Two lead agents, `researcher` and `tutor`, are what you talk to: each runs those skills in order. Worker agents cover one-shot jobs that need fresh eyes or parallel runs: `source-finder`, `claim-checker` and `grader`. Every harness gets leads as role skills, since a harness agent can't hold a conversation. Commands cover anything a program can do exactly:
 - `puck sources` searches OpenAlex, Semantic Scholar, arXiv and Open Library, walks citation graphs, and checks quotes against saved text.
-- `puck kb lint` fails any wiki claim that doesn't trace to a source.
+- `puck topic check` fails any wiki claim that doesn't trace to a source, and any source that doesn't resolve.
 - `puck learn next` picks the next concept by its prerequisites.
-- `puck exercise check` runs an exercise's tests.
+- `puck learn check` runs an exercise's tests.
 
 There is no teacher agent. Teaching is a conversation, and a subagent can't hold one, so the main session runs `teach`.
 
@@ -97,7 +97,7 @@ flowchart TB
     subgraph behaviour["context/ behaviour"]
         rules["instructions/ and profile.md"]
         skills["skills/: task, plan, review; scope, field-map, literature, reading-path, teach, practice, visualize, kb"]
-        agents["agents/: reviewer, retro, researcher, claim-checker, grader"]
+        agents["agents/: leads researcher, tutor; workers source-finder, claim-checker, grader, reviewer, retro"]
         hookrules["hooks.yaml: resume, close-guard"]
     end
 
@@ -128,7 +128,6 @@ flowchart TB
     subgraph data["context/ data"]
         knowledge["knowledge/: one folder per topic"]
         archive["tasks/: past retros"]
-        proposals["proposals/: waiting for your OK"]
     end
 
     behaviour --> build
@@ -146,8 +145,7 @@ flowchart TB
 
     retro -. "skill drafts" .-> skills
     retro -. "topic facts" .-> knowledge
-    retro -. "rules, patches, promotions" .-> proposals
-    proposals -. "one list at close" .-> you
+    retro -. "skill drafts, one list at close" .-> you
     you -. "approve" .-> behaviour
 ```
 
@@ -161,14 +159,14 @@ puck/
     instructions/      # global.md, the always-on rules
     profile.md         # hand-written facts about you
     skills/            # each has SKILL.md and evals/
-    agents/            # reviewer, retro, researcher, claim-checker, grader
+    agents/            # leads: researcher, tutor; workers: source-finder, claim-checker, grader, reviewer, retro
     hooks.yaml         # resume, close-guard
     templates/         # SPEC, skill, agent, retro; mission, map, path, session
     knowledge/<topic>/ # mission, map, path, sources.json, raw/, wiki/, sessions/, exercises/, visuals/
     tasks/             # archived retros; created at first close
-    proposals/         # changes waiting for your OK; done/ is gitignored
   docs/
     design.md          # this file
+    features.md        # every skill, agent, command and hook
     spikes.md          # what's been tested on each host
     research/          # evidence behind the design
   src/

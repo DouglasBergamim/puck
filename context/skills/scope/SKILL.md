@@ -17,7 +17,7 @@ metadata:
 ## Procedure
 1. Run `puck topic list`. If the topic exists, run `puck learn status <topic>` and read its `mission.md`; only fill gaps. Otherwise run `puck topic new "<name>"`.
 2. For a full research run, start a task first: `puck task start "Research <topic>" --type research`, then follow the task skill around this chain.
-3. Interview the user, at most two questions per message, each with your recommended answer so "yes" is enough:
+3. Take everything the user already said, in their message or after the skill's name, as answered. Interview them only on what's missing, with the ask capability: at most two questions at a time, each with two to four options and your recommended one first, so one click is enough. The user can always answer in their own words. Cover:
    - the question they want answered, or what they want to be able to do;
    - why, because that decides what to leave out;
    - depth: `orient` (know the map), `use` (apply it) or `master` (derive it and build on it);

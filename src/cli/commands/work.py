@@ -34,6 +34,8 @@ def task_command(args) -> int:
     elif args.action == "close":
         task = tasks.resolve(args.task, cwd)
         print(tasks.close(task["id"], args.outcome))
+        for path in scratch.collect_garbage():  # old experiments go when any task closes
+            print(f"Removed old scratch {path}")
     return 0
 
 
@@ -43,10 +45,6 @@ def note_command(args) -> int:
 
 
 def scratch_command(args) -> int:
-    if args.action == "gc":
-        for path in scratch.collect_garbage():
-            print(f"Removed {path}")
-        return 0
     task = tasks.resolve(args.task, Path.cwd())
     if args.action == "new":
         print(scratch.new_experiment(task, args.name))
@@ -97,4 +95,3 @@ def register(commands) -> None:
     entry.add_argument("--result", required=True)
     entry.add_argument("--verdict", required=True)
     entry.add_argument("--task")
-    spaces.add_parser("gc")

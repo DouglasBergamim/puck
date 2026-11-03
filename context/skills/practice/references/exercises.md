@@ -10,7 +10,7 @@ Every exercise is a folder `exercises/<id>/` in the topic. Ids are short and uni
 
 | Kind | Use for | Files | Graded by |
 |---|---|---|---|
-| `code` | Anything that runs | `prompt.md`, starter files, tests, `exercise.json` with `check` | `puck exercise check`: the tests must fail before and pass after |
+| `code` | Anything that runs | `prompt.md`, starter files, tests, `exercise.json` with `check` | `puck learn check`: the tests must fail before and pass after |
 | `math` | Derivations, proofs, calculations | `prompt.md`, `key.md` with the full worked solution, `rubric.md` | `grader` agent |
 | `concept` | Explain it back, compare two ideas, predict an outcome | `prompt.md`, `key.md` with the points a good answer makes, `rubric.md` | `grader` agent |
 | `design` | Apply the idea to a small scenario | `prompt.md`, `key.md` with one good design and its trade-offs, `rubric.md` | `grader` agent |

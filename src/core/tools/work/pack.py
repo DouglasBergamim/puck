@@ -47,10 +47,6 @@ def _markdown(folder: Path, label: str, pattern: str) -> list[tuple[str, str, st
     return found
 
 
-def _proposals(root: Path) -> list[str]:
-    return [str(path) for path in sorted(paths.proposals(root).glob("*.md"))]
-
-
 CHAINS = {
     "research": "Research chain: scope, field-map, literature, reading-path. Each skill names the next.",
 }
@@ -78,7 +74,4 @@ def pack(goal: str, root: Path | None = None, kind: str | None = None) -> str:
         size += len(line) + 1
     if not ranked:
         lines.append("- Nothing relevant found.")
-    pending = _proposals(root)
-    if pending:
-        lines.append(f"- {len(pending)} proposal(s) await the user: `puck proposal list`.")
     return "\n".join(lines)

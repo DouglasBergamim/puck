@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import yaml
 
-CAPABILITIES = ("read", "search", "shell-read", "shell", "edit", "web", "subagents")
+CAPABILITIES = ("read", "search", "shell-read", "shell", "edit", "web", "subagents", "ask")
 EVENTS = ("session-start", "stop")
 DESCRIPTION = "A layer in front of any agent harness that optimises LLM context and improves its tools"
 
@@ -40,6 +40,9 @@ class Agent:
     model: str
     max_turns: int | None
     body: str
+    mode: str = "worker"  # lead: the user talks to it; worker: a skill or lead starts it
+    skills: tuple[str, ...] = ()
+    agents: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -65,6 +68,17 @@ class Result:
     context: str | None = None
     decision: str | None = None
     reason: str | None = None
+
+
+@dataclass(frozen=True)
+class Install:
+    """What makes a harness load Puck in every session. Paths are relative to the user's home."""
+
+    link: str
+    settings: str = ""
+    allow: tuple[str, ...] = ()
+    directories: tuple[str, ...] = ()
+    env: tuple[tuple[str, str], ...] = ()
 
 
 def split_frontmatter(text: str) -> tuple[dict, str]:

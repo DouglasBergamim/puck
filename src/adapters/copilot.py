@@ -40,7 +40,8 @@ class CopilotAdapter(PluginAdapter):
             "description": agent.description,
             "tools": self.tool_names(agent.tools),
         }
-        return [text_file(f"agents/{agent.name}.agent.md", frontmatter(head, agent.body))]
+        body = agent.body.rstrip("\n") + "\n\n" + self.agent_reference(agent)
+        return [text_file(f"agents/{agent.name}.agent.md", frontmatter(head, body))]
 
     def hook_entry(self, rule: HookRule, seconds: int) -> dict:
         return {"type": "command", "bash": self.hook_command(rule), "timeoutSec": seconds}
@@ -55,5 +56,6 @@ class CopilotAdapter(PluginAdapter):
             output["additionalContext"] = nested["additionalContext"]
         return output
 
-    def launch_command(self, package: PurePosixPath) -> list[str]:
+    def launch_command(self, package: PurePosixPath, home: PurePosixPath | None = None,
+                       commands: tuple[str, ...] = (), extra: tuple[str, ...] = ()) -> list[str]:
         return ["copilot", "plugin", "install", str(package)]

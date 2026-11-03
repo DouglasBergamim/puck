@@ -15,7 +15,7 @@ metadata:
   last_evaluated: "never"
 ---
 ## Procedure
-1. Read `mission.md`, `map.md`, `puck sources list <topic>` and the wiki index. If sources aren't verified yet, run `puck sources verify <topic>` and fix that first, or use `literature`.
+1. Read `mission.md`, `map.md`, `puck sources list <topic>` and the wiki index. If sources aren't verified yet, run `puck topic check <topic>` and fix that first, or use `literature`.
 2. Group the concept table into 3-7 stages, in prerequisite order. A stage is something the user can finish in one to three sittings.
 3. For each stage, pick the fewest sources that cover its concepts, preferring anchors and textbooks early and canon and frontier later. Name exact chapters, sections or pages. If you can't name them from `raw/` or the wiki, say "skim the abstract and introduction" rather than inventing chapter numbers.
 4. Let depth decide the reach: `orient` stops at anchors and textbooks, `use` adds canon and practical, `master` adds frontier and critique.

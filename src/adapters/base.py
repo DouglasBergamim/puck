@@ -8,7 +8,8 @@ import json
 import math
 from pathlib import PurePosixPath
 
-from core.common.model import CAPABILITIES, DESCRIPTION, Agent, Event, File, HookRule, Result, Skill, ToolMap, frontmatter
+from core.common.model import (CAPABILITIES, DESCRIPTION, Agent, Event, File, HookRule, Install, Result, Skill,
+                               ToolMap, frontmatter)
 
 
 def text_file(path: str, text: str) -> File:
@@ -34,7 +35,8 @@ class Adapter:
     reference_note = ""
 
     def tool_names(self, capabilities: tuple[str, ...]) -> list[str]:
-        names = [t for capability in capabilities for t in self.tools[capability].tools]
+        # A capability this harness lacks maps to nothing; the reference file says so.
+        names = [t for capability in capabilities if capability in self.tools for t in self.tools[capability].tools]
         return list(dict.fromkeys(names))
 
     def tools_reference(self) -> str:
@@ -61,8 +63,31 @@ class Adapter:
         files.append(text_file(f"{root}/references/host-tools.md", self.tools_reference()))
         return files
 
+    def qualified(self, name: str) -> str:
+        """How this harness names a Puck skill or agent."""
+        return name
+
+    def agent_reference(self, agent: Agent) -> str:
+        """What the agent may use, generated from its definition so it can't drift."""
+        lines = ["## Your tools, skills and agents", "", "Generated from your definition. Use nothing else.", ""]
+        for capability in agent.tools:
+            mapped = self.tools.get(capability)
+            lines.append(f"- {capability}: {', '.join(mapped.tools) if mapped else 'your harness equivalent'}")
+        names = ", ".join(map(self.qualified, agent.skills)) if agent.skills else "none"
+        lines.append(f"- Skills you load when your workflow reaches them: {names}")
+        names = ", ".join(map(self.qualified, agent.agents)) if agent.agents else "none"
+        lines.append(f"- Agents you may start: {names}")
+        return "\n".join(lines) + "\n"
+
     def render_agent(self, agent: Agent) -> list[File]:
         return []
+
+    def render_lead(self, agent: Agent) -> list[File]:
+        """A lead is someone the user talks to, so in every harness it becomes a role skill."""
+        opening = (f"Take the role of the Puck {agent.name} for the rest of this conversation, "
+                   "until the user picks another role or the work is done.\n\n")
+        body = opening + agent.body.rstrip("\n") + "\n\n" + self.agent_reference(agent)
+        return self.render_skill(Skill(agent.name, agent.description, "model", body))
 
     def render_hooks(self, rules: list[HookRule]) -> list[File]:
         return []
@@ -92,7 +117,21 @@ class Adapter:
 
     # Commands.
 
-    def launch_command(self, package: PurePosixPath) -> list[str] | None:
+    def launch_command(self, package: PurePosixPath, home: PurePosixPath | None = None,
+                       commands: tuple[str, ...] = (), extra: tuple[str, ...] = ()) -> list[str] | None:
+        """How to start the harness with Puck loaded.
+
+        `home` is Puck's home folder, whose skills and topic folders the agent reads
+        and writes. `commands` are puck command prefixes safe to run without asking.
+        `extra` is passed through, e.g. a first message.
+        """
+        return None
+
+    def install(self, home: PurePosixPath, commands: tuple[str, ...] = ()) -> Install | None:
+        """How to load Puck in every session of this harness, or None if unsupported.
+
+        `home` and `commands` mean the same as in launch_command.
+        """
         return None
 
     def eval_command(self, package: PurePosixPath, case: str) -> list[str] | None:

@@ -13,7 +13,7 @@
 
 | Folder | What it holds |
 |---|---|
-| `context/` | The source of truth for everything the LLM sees: skills, agents, instructions, hook rules, study topics, past retros and proposals |
+| `context/` | The source of truth for everything the LLM sees: skills, agents, instructions, hook rules, study topics and past retros |
 | `src/core/` | The harness-neutral implementation: `common/`, `primitives/`, `tools/work/`, `tools/learning/` |
 | `src/adapters/` | One deterministic transform per harness |
 | `src/cli/` | The `puck` command |
@@ -23,12 +23,15 @@
 
 ## Setup
 
+From the repository:
+
 ```
-uv sync
-uv tool install --editable .
-puck build
-claude --plugin-dir "$PWD/dist/claude"
+./puck install
 ```
+
+If [uv](https://docs.astral.sh/uv/) is missing, it asks before installing it.
+
+After this, every new `claude` session loads Puck. `puck uninstall` takes it out. `docs/features.md` lists what Puck offers.
 
 `dist/generic` works with any harness that reads `AGENTS.md` and `.agents/skills/`.
 

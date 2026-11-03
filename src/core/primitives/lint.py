@@ -82,7 +82,15 @@ def host_specific(body: str, tools: set[str]) -> list[str]:
     return problems
 
 
-def lint_agent(path: Path, capabilities: set[str]) -> list[str]:
+AGENT_SECTIONS = {
+    "lead": ("Role", "Rules", "Workflow", "Boundaries"),
+    "worker": ("Role", "You receive", "Rules", "Workflow", "Boundaries", "Return"),
+}
+
+
+def lint_agent(path: Path, capabilities: set[str], skills: set[str] = frozenset(),
+               workers: set[str] = frozenset(), tools: set[str] = frozenset()) -> list[str]:
+    """`skills` and `workers` are the names that exist, so references can be checked."""
     where = f"agents/{path.name}"
     try:
         meta, body = split_frontmatter(path.read_text())
@@ -98,9 +106,29 @@ def lint_agent(path: Path, capabilities: set[str]) -> list[str]:
         errors.append(f"{where}: tools must be known capabilities, got {sorted(unknown)}")
     if meta.get("model") not in {"fast", "strong"}:
         errors.append(f"{where}: model must be fast or strong")
-    for section in ("Role", "You receive", "Rules", "Process", "Boundaries", "Return"):
+    mode = meta.get("mode", "worker")
+    if mode not in AGENT_SECTIONS:
+        errors.append(f"{where}: mode must be lead or worker")
+        mode = "worker"
+    if mode == "worker" and "ask" in (meta.get("tools") or []):
+        errors.append(f"{where}: a worker can't reach the user, so it can't have the ask capability")
+    if mode == "lead" and path.stem in skills:
+        errors.append(f"{where}: a lead becomes a skill, so its name can't match the skill '{path.stem}'")
+    for field in ("skills", "agents"):
+        if not isinstance(meta.get(field, []), list):
+            errors.append(f"{where}: {field} must be a list")
+    missing = sorted(set(meta.get("skills") or []) - skills)
+    if missing:
+        errors.append(f"{where}: unknown skills {missing}")
+    missing = sorted(set(meta.get("agents") or []) - workers)
+    if missing:
+        errors.append(f"{where}: agents must name worker agents, got {missing}")
+    if (meta.get("agents") or []) and "subagents" not in (meta.get("tools") or []):
+        errors.append(f"{where}: starting agents needs the subagents capability")
+    for section in AGENT_SECTIONS[mode]:
         if section not in headings(body):
             errors.append(f"{where}: missing section '{section}'")
+    errors += [f"{where}: {problem}" for problem in host_specific(body, tools)]
     return errors
 
 
@@ -138,7 +166,16 @@ def lint_all(root: Path | None = None) -> list[str]:
     errors = lint_budget(root)
     for directory in sorted(p for p in paths.skills(root).iterdir() if p.is_dir()):
         errors += lint_skill(directory, tools)
-    for path in sorted(paths.agents(root).glob("*.md")):
-        errors += lint_agent(path, set(CAPABILITIES))
+    skills = {p.name for p in paths.skills(root).iterdir() if p.is_dir()}
+    agent_paths = sorted(paths.agents(root).glob("*.md"))
+    workers = set()
+    for path in agent_paths:
+        try:
+            if split_frontmatter(path.read_text())[0].get("mode", "worker") == "worker":
+                workers.add(path.stem)
+        except (OSError, ValueError, yaml.YAMLError):
+            pass  # lint_agent reports it
+    for path in agent_paths:
+        errors += lint_agent(path, set(CAPABILITIES), skills, workers, tools)
     errors += lint_hooks(paths.hook_rules(root))
     return errors

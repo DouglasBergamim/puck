@@ -1,8 +1,11 @@
 ---
 name: agent-name
 description: One line saying when to delegate to this agent.
+mode: worker  # worker: a skill or lead starts it; lead: the user talks to it
 tools: [read, search]
 model: strong
+skills: []    # skills it loads
+agents: []    # worker agents it starts
 max_turns: "20"
 ---
 ## Role
@@ -14,7 +17,7 @@ The exact inputs the caller must provide.
 ## Rules
 Everything it needs, restated. Assume it sees no instruction files.
 
-## Process
+## Workflow
 1. ...
 
 ## Boundaries

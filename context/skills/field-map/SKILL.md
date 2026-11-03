@@ -22,7 +22,7 @@ metadata:
    - List open questions and debates, with who holds which view.
    - Mark anything you're unsure of with `?`, so the search can settle it.
 3. Write `map.md` from `$PUCK_HOME/context/templates/map.md`: the Mermaid graph, the concept table in teaching order with every status `unseen` unless the probe set it, and the debates. Remove the `<!-- template -->` line. Ids are lowercase words joined by hyphens.
-4. Show the user the graph and the subfields, and ask what to cut, add or merge. Apply their changes.
+4. Show the user the graph and the subfields. With the ask capability, let them pick the subfields to keep (multiple answers allowed), and ask what to add or merge. Apply their changes.
 5. Run `puck learn next <topic>` to confirm the table parses and the first concept has no unmet prerequisites.
 
 ## Output

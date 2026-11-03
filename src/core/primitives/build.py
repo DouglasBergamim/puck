@@ -52,6 +52,8 @@ def load_agents(root: Path) -> list[Agent]:
         agents.append(Agent(
             name=meta["name"], description=meta["description"], tools=tuple(meta["tools"]),
             model=meta["model"], max_turns=int(turns) if turns else None, body=body,
+            mode=meta.get("mode", "worker"), skills=tuple(meta.get("skills") or ()),
+            agents=tuple(meta.get("agents") or ()),
         ))
     return agents
 
@@ -71,7 +73,7 @@ def render(adapter: Adapter, root: Path) -> list[File]:
     for skill in load_skills(root):
         files += adapter.render_skill(skill)
     for agent in load_agents(root):
-        files += adapter.render_agent(agent)
+        files += adapter.render_lead(agent) if agent.mode == "lead" else adapter.render_agent(agent)
     files += adapter.render_hooks(load_rules(root))
     files += adapter.render_instructions(load_instructions(root))
     return files

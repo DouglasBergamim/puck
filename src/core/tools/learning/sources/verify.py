@@ -88,12 +88,12 @@ def fetch(topic: str, source_id: str, force: bool = False) -> tuple[Path, list[s
             if status == 200 and kind == "html":
                 sections.append(f"## Page text ({final})\n\n" + html_text(body.decode("utf-8", "replace")))
             else:
-                notes.append(f"{url}: HTTP {status}, {kind}; use `puck sources excerpt` for this text.")
+                notes.append(f"{url}: HTTP {status}, {kind}; save the text you read with `puck sources fetch --file`.")
         except net.SourceError as error:
             notes.append(str(error))
     if not sections:
         raise PuckError(f"Nothing to fetch for {source_id}: no abstract and no readable page. "
-                        f"Paste the text you read with `puck sources excerpt {topic} {source_id} --file …`.")
+                        f"Save the text you read with `puck sources fetch {topic} {source_id} --file … --origin …`.")
     return _write_raw(topic, source_id, "puck", url or "provider abstract", "\n\n".join(sections), force), notes
 
 

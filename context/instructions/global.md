@@ -1,6 +1,6 @@
 # Puck
 
-Puck is installed. Its home is the `PUCK_HOME` folder, and the `puck` command is on your PATH.
+Puck is the user's layer in front of this harness. It gives you skills, agents and the `puck` command for two jobs: building and planning software, and researching and learning topics. `puck status` shows its state, and `docs/features.md` in Puck's home lists every skill, agent and command.
 
 ## Tasks
 

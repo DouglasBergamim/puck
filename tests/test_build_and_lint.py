@@ -105,3 +105,115 @@ def test_rebuild_removes_what_left_the_source(puck_home):
     (paths.skills(puck_home) / "other/SKILL.md").write_text(template("other"))
     build.build_all(puck_home)
     assert not (puck_home / "dist/claude/skills/task").exists()
+
+
+def test_install_then_uninstall_leaves_user_settings_as_they_were(puck_home, tmp_path, monkeypatch):
+    import adapters
+    from core.primitives import install
+
+    monkeypatch.setattr(install.shutil, "which", lambda name: f"/bin/{name}")  # puck already on PATH
+
+    user = tmp_path / "user"
+    settings = user / ".claude" / "settings.json"
+    settings.parent.mkdir(parents=True)
+    before = {"model": "opus", "permissions": {"allow": ["Read(//dev/**)"]}}
+    settings.write_text(json.dumps(before))
+    claude = adapters.get("claude")
+
+    install.install(claude, puck_home, user, ("puck topic",))
+    install.install(claude, puck_home, user, ("puck topic",))  # twice adds nothing new
+    link = user / ".claude" / "skills" / "puck"
+    assert link.resolve() == (paths.dist(puck_home) / "claude").resolve()
+    after = json.loads(settings.read_text())
+    assert after["permissions"]["allow"] == ["Read(//dev/**)", "Bash(puck topic)", "Bash(puck topic *)",
+                                             f"Edit(/{puck_home}/context/knowledge/**)"]
+    assert after["env"] == {"PUCK_HOME": str(puck_home)}
+
+    install.uninstall(claude, puck_home, user, ("puck topic",))
+    assert not link.exists() and json.loads(settings.read_text()) == before
+
+
+def test_install_refuses_to_replace_a_real_folder_or_broken_settings(puck_home, tmp_path):
+    import adapters
+    import pytest
+    from core.common.errors import PuckError
+    from core.primitives import install
+
+    user = tmp_path / "user"
+    (user / ".claude" / "skills" / "puck").mkdir(parents=True)
+    with pytest.raises(PuckError, match="isn't a link Puck made"):
+        install.install(adapters.get("claude"), puck_home, user)
+    (user / ".claude" / "skills" / "puck").rmdir()
+    (user / ".claude" / "settings.json").write_text("{not json")
+    with pytest.raises(PuckError, match="left alone"):
+        install.install(adapters.get("claude"), puck_home, user)
+    assert not (user / ".claude" / "skills" / "puck").exists()
+
+
+def test_install_puts_puck_on_the_path_only_when_missing(tmp_path, monkeypatch):
+    from core.primitives import install
+
+    calls = []
+    monkeypatch.setattr(install.subprocess, "run",
+                        lambda command, **kw: calls.append(command) or type("R", (), {"returncode": 0})())
+    monkeypatch.setattr(install.shutil, "which", lambda name: f"/bin/{name}")
+    assert install.ensure_command(tmp_path) is None and calls == []
+    monkeypatch.setattr(install.shutil, "which", lambda name: None if name == "puck" else f"/bin/{name}")
+    assert install.ensure_command(tmp_path)
+    assert calls == [["uv", "tool", "install", "--editable", str(tmp_path)]]
+
+
+LEAD = """---
+name: {name}
+description: A lead. Use when the user asks for it.
+mode: lead
+tools: {tools}
+model: strong
+skills: {skills}
+agents: {agents}
+---
+## Role
+R.
+
+## Rules
+R.
+
+## Workflow
+1. W.
+
+## Boundaries
+B.
+"""
+
+
+def test_leads_must_reference_real_skills_and_workers(puck_home):
+    from core.common.model import CAPABILITIES
+    agents = paths.agents(puck_home)
+    (agents / "worker.md").write_text(AGENT.replace("agent-name", "worker"))
+    lead = agents / "guide.md"
+    lead.write_text(LEAD.format(name="guide", tools="[read, subagents]", skills="[task]", agents="[worker]"))
+    assert lint.lint_agent(lead, set(CAPABILITIES), {"task"}, {"worker"}) == []
+    lead.write_text(LEAD.format(name="guide", tools="[read]", skills="[nope]", agents="[guide]"))
+    joined = "\n".join(lint.lint_agent(lead, set(CAPABILITIES), {"task"}, {"worker"}))
+    assert "unknown skills ['nope']" in joined and "must name worker agents" in joined
+    assert "needs the subagents capability" in joined
+    clash = agents / "task.md"
+    clash.write_text(LEAD.format(name="task", tools="[read]", skills="[]", agents="[]"))
+    assert any("can't match the skill" in e for e in lint.lint_agent(clash, set(CAPABILITIES), {"task"}, set()))
+
+
+def test_a_lead_becomes_a_role_skill_not_a_background_agent(puck_home):
+    import adapters
+    (paths.agents(puck_home) / "guide.md").write_text(
+        LEAD.format(name="guide", tools="[read]", skills="[task]", agents="[]"))
+    files = {f.path: f for f in build.render(adapters.get("claude"), puck_home)}
+    assert "agents/guide.md" not in files
+    text = files["skills/guide/SKILL.md"].content.decode()
+    assert "Take the role of the Puck guide" in text and "puck:task" in text
+
+
+def test_only_leads_may_ask_the_user(puck_home):
+    from core.common.model import CAPABILITIES
+    worker = paths.agents(puck_home) / "agent-name.md"
+    worker.write_text(AGENT.replace("[read, search]", "[read, ask]"))
+    assert any("can't have the ask capability" in e for e in lint.lint_agent(worker, set(CAPABILITIES)))

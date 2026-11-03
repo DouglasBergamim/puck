@@ -14,7 +14,7 @@ metadata:
 ---
 ## Procedure
 1. Read the relevant code or notes first, so you only ask what you can't find out yourself.
-2. Interview the user, a few questions at a time, on decisions that would change the build. Give a recommendation with each question.
+2. Interview the user on decisions that would change the build, with the ask capability: a few questions at a time, each with two to four options and your recommendation first.
 3. Write SPEC.md in the task folder: goal, decisions with reasons, non-goals, and acceptance checks.
 4. Make every acceptance check a command or an observable result.
 5. Keep it to one page. Leave out line-level steps, because they go stale.

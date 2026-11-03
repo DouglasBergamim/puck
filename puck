@@ -1,0 +1,38 @@
+#!/bin/sh
+# Run Puck from this folder before anything is installed: `./puck install`.
+# Puck needs uv. If it's missing, ask once, install it, then hand over to the real `puck`.
+set -e
+here=$(cd "$(dirname "$0")" && pwd)
+
+uv=$(command -v uv || true)
+if [ -z "$uv" ] && [ -x "$HOME/.local/bin/uv" ]; then
+    uv="$HOME/.local/bin/uv"
+fi
+
+if [ -z "$uv" ]; then
+    echo "Puck needs uv (https://docs.astral.sh/uv/), and it isn't installed."
+    if [ ! -t 0 ]; then
+        echo "Run ./puck in a terminal to install it, or install uv yourself." >&2
+        exit 1
+    fi
+    printf "Install uv now with its official installer? [Y/n] "
+    read -r answer
+    case "$answer" in
+        ""|y|Y|yes|Yes) ;;
+        *) echo "Not installing. Install uv yourself, then run ./puck again."; exit 1 ;;
+    esac
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    uv="$HOME/.local/bin/uv"
+    if [ ! -x "$uv" ]; then
+        uv=$(command -v uv || true)
+    fi
+    if [ -z "$uv" ]; then
+        echo "uv was installed but can't be found. Open a new terminal and run ./puck again." >&2
+        exit 1
+    fi
+fi
+
+# The uv found here may not be on PATH yet; puck install runs it again for `uv tool install`.
+PATH="$(dirname "$uv"):$PATH"
+export PATH
+exec "$uv" run --quiet --project "$here" puck "$@"

@@ -6,7 +6,9 @@ Rules for each wiki page, applied to every paragraph and list item:
 - A quoted passage of four or more words appears in the cited sources' raw/ text.
 - A number with two or more digits appears in the cited sources' raw/ text.
 - Links to other wiki pages point at pages that exist.
-Headings, code blocks, Mermaid diagrams and blockquotes are skipped.
+Headings, code blocks, Mermaid diagrams, blockquotes and metadata lines such as
+`Concepts: a, b` are skipped. A list item inherits the citations of the lead-in
+line just above it when that line ends with a colon, e.g. "Where to read [s1]:".
 A page whose frontmatter says `status: unverified` passes, with a warning.
 """
 
@@ -19,9 +21,10 @@ from core.tools.learning.sources import ledger
 from core.tools.learning.sources.verify import normal, raw_text
 
 CITE = re.compile(r"\[(s\d+(?:\s*,\s*s\d+)*)\]")
-UNSOURCED = "[not in sources]"
+UNSOURCED = "[not in sources"  # also matches "[not in sources: why]"
 QUOTE = re.compile(r"[\"“]([^\"”]{12,})[\"”]")
 NUMBER = re.compile(r"(?<![\w.])(\d[\d,.]*\d)(%?)")
+METADATA = re.compile(r"^(Concepts|Tags|See also|Related|Aliases):\s", re.IGNORECASE)
 LINK = re.compile(r"\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]|\]\(((?!https?:|#)[^)]+\.md)\)")
 
 
@@ -45,7 +48,7 @@ def _blocks(text: str) -> list[tuple[int, str]]:
             flush()
             fenced = not fenced
             continue
-        if fenced or not stripped or stripped.startswith(("#", ">", "|", "<!--")):
+        if fenced or not stripped or stripped.startswith(("#", ">", "|", "<!--")) or METADATA.match(stripped):
             flush()
             continue
         if re.match(r"^([-*+]|\d+\.)\s", stripped):
@@ -64,12 +67,20 @@ def lint_page(topic: str, page: Path, known: set[str], raw_cache: dict) -> tuple
     if re.search(r"^status:\s*unverified\s*$", text.split("\n---", 1)[0], re.MULTILINE):
         warnings.append(f"{name}: marked unverified.")
     wiki = page.parent
+    lead_in: list[str] = []
     for line, block in _blocks(text):
         where = f"{name}:{line}"
-        cited = [i.strip() for group in CITE.findall(block) for i in group.split(",")]
+        cited = list(dict.fromkeys(i.strip() for group in CITE.findall(block) for i in group.split(",")))
+        is_item = bool(re.match(r"^([-*+]|\d+\.)\s", block))
+        if not is_item:
+            lead_in = cited if block.rstrip().endswith(":") else []
+        elif not cited:
+            cited = lead_in
         if not cited:
             if UNSOURCED not in block:
-                errors.append(f"{where}: no citation. Cite a source like [s1], or mark it {UNSOURCED}.")
+                label_only = block.rstrip().endswith(":") and len(block.split()) <= 4
+                if not label_only:
+                    errors.append(f"{where}: no citation. Cite a source like [s1], or mark it [not in sources].")
             continue
         missing = [i for i in cited if i not in known]
         if missing:
