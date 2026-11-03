@@ -124,6 +124,15 @@ def test_concurrent_adds_get_distinct_ids(topic):
 
 # Evidence -------------------------------------------------------------------------
 
+def test_ledger_takes_courses_and_recommendation_threads(topic):
+    assert cli.main(["sources", "add", topic, "--url", "https://ocw.example.edu/gt", "--title", "Game Theory course",
+                     "--kind", "course", "--role", "textbook"]) == 0
+    assert cli.main(["sources", "add", topic, "--url", "https://forum.example.com/best-books", "--title", "Best books?",
+                     "--kind", "discussion", "--role", "recommendation", "--why", "Osborne recommended by most replies"]) == 0
+    kinds = {s["kind"]: s["role"] for s in ledger.load(topic)}
+    assert kinds == {"course": "textbook", "discussion": "recommendation"}
+
+
 def add_with_raw(topic, text, quote="", doi="10.1/ok"):
     source_id, _ = ledger.add(topic, make(title="A source about attention", doi=doi), role="anchor", quote=quote)
     verify.excerpt(topic, source_id, text, "test")
@@ -278,6 +287,40 @@ def test_cli_creates_and_checks_a_topic(puck_home, capsys):
     assert cli.main(["topic", "check", "linear-algebra", "--has", "mission"]) == 1
 
 
+LEARN_MISSION = """# Mission: linear algebra
+
+## Subject
+Linear algebra.
+
+## Applied to
+Machine learning.
+
+## Goal
+By the end I can explain what an eigenvector of a covariance matrix says about the data.
+
+## Why
+To read ML papers without skipping the maths.
+
+## Depth
+use
+
+## Out of scope
+- Abstract vector spaces over arbitrary fields.
+
+## Background
+Not stated.
+"""
+
+
+def test_topic_check_has_mission_passes_before_any_sources(puck_home, capsys):
+    assert cli.main(["topic", "new", "Linear algebra"]) == 0
+    (topics.folder("linear-algebra") / "mission.md").write_text(LEARN_MISSION)
+    assert cli.main(["topic", "check", "linear-algebra", "--has", "mission", "--no-links"]) == 0
+    assert cli.main(["topic", "check", "linear-algebra", "--has", "mission,sources", "--no-links"]) == 1
+    assert cli.main(["topic", "check", "linear-algebra", "--no-links"]) == 1
+    assert "sources.json" in capsys.readouterr().out
+
+
 def test_topic_check_runs_every_check_for_the_topic(topic, capsys):
     source_id = add_with_raw(topic, "Real text.", quote="text the source never said")
     assert cli.main(["sources", "fetch", topic, source_id, "--file", "-"]) == 1  # --origin is required
@@ -285,3 +328,39 @@ def test_topic_check_runs_every_check_for_the_topic(topic, capsys):
     assert cli.main(["topic", "check", topic, "--has", "mission", "--no-links"]) == 1
     out = capsys.readouterr().out
     assert "mission.md" in out and "quote not found" in out and "no citation" in out
+
+
+def test_mission_templates_follow_the_topic_kind(puck_home):
+    learn = topics.new("Linear algebra") / "mission.md"
+    research = topics.new("HFT and liquidity", kind="research") / "mission.md"
+    assert "## Subject" in learn.read_text() and "## Question" not in learn.read_text()
+    assert "## Question" in research.read_text() and "## Areas" in research.read_text()
+    with pytest.raises(PuckError):
+        topics.new("Other", kind="survey")
+
+
+def test_mission_check_wants_each_section_filled_and_a_real_depth(puck_home):
+    topics.new("Linear algebra")
+    mission = topics.folder("linear-algebra") / "mission.md"
+    # The template mark removed, but every section still holds only its guidance comment.
+    mission.write_text(mission.read_text().replace("<!-- template -->\n", ""))
+    problems = topics.check("linear-algebra", ["mission"])
+    assert "mission.md: ## Subject is empty" in problems and "mission.md: ## Goal is empty" in problems
+    mission.write_text(LEARN_MISSION.replace("## Applied to\nMachine learning.\n", "## Applied to\n"))
+    assert topics.check("linear-algebra", ["mission"]) == []  # Applied to is optional
+    mission.write_text(LEARN_MISSION.replace("\nuse\n", "\ndeep\n"))
+    assert topics.check("linear-algebra", ["mission"]) == [
+        "mission.md: ## Depth must start with one of orient, use, master"]
+
+
+def test_topic_check_has_report(topic):
+    assert topics.check(topic, ["report"]) == ["report.md is missing or still a template"]
+    (topics.folder(topic) / "report.md").write_text("# Report\n\n## Answer\nYes [s1].\n")
+    assert topics.check(topic, ["report"]) == []
+
+
+def test_sources_add_can_fetch_in_the_same_command(topic, offline, capsys):
+    offline["https://forum.example.com/best-books"] = (200, b"<html><body><p>Read Osborne first.</p></body></html>")
+    assert cli.main(["sources", "add", topic, "--url", "https://forum.example.com/best-books",
+                     "--title", "Best books?", "--kind", "discussion", "--role", "recommendation", "--fetch"]) == 0
+    assert "Read Osborne first." in (topics.folder(topic) / "raw" / "s1.md").read_text()

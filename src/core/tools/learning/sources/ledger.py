@@ -9,7 +9,7 @@ from core.common.errors import PuckError
 from core.tools.learning import topics
 from core.tools.learning.sources.record import KINDS, keys, merge
 
-ROLES = ("anchor", "canon", "frontier", "textbook", "practical", "critique")
+ROLES = ("anchor", "canon", "frontier", "textbook", "practical", "critique", "recommendation")
 
 
 def _path(topic: str):

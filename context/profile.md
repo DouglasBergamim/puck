@@ -4,4 +4,4 @@
 
 ## Learning
 
-- friction: guided  <!-- guided | socratic: how long a tutor waits before giving hints -->
+- friction: guided  <!-- guided | socratic: how long the professor waits before giving hints -->

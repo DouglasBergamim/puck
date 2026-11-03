@@ -48,7 +48,8 @@ def _markdown(folder: Path, label: str, pattern: str) -> list[tuple[str, str, st
 
 
 CHAINS = {
-    "research": "Research chain: scope, field-map, literature, reading-path. Each skill names the next.",
+    "research": "Research chain: scope, field-map, literature, report. Each skill names the next.",
+    "learn": "Learning chain: scope, curriculum, roadmap, then teach sessions. Each skill names the next.",
 }
 
 

@@ -27,7 +27,7 @@ def _read(file: str) -> str:
 
 def topic_command(args) -> int:
     if args.action == "new":
-        print(topics.new(args.name))
+        print(topics.new(args.name, args.kind))
     elif args.action == "list":
         for name in topics.all_topics():
             print(name)
@@ -40,7 +40,8 @@ def check_topic(args) -> int:
     """One validator per topic: the named files, the sources, then the wiki."""
     required = [k.strip() for k in args.has.split(",")] if args.has else []
     errors = topics.check(args.topic, required)
-    source_errors, warnings = verify.verify(args.topic, not args.no_links)
+    # With --has, an empty ledger fails only through `sources`, which topics.check reports.
+    source_errors, warnings = verify.verify(args.topic, not args.no_links, require_sources=not required)
     wiki_errors, wiki_warnings = kb.lint(args.topic)
     return _report(errors + source_errors + wiki_errors, warnings + wiki_warnings, f"{args.topic}: check passes")
 
@@ -74,6 +75,11 @@ def sources_command(args) -> int:
             raise PuckError("Give a reference (e.g. openalex:W123), or --url with --title for a web page.")
         source_id, created = ledger.add(args.topic, record, args.role, args.why, args.quote, args.group)
         print(f"{source_id} {'added' if created else 'already there, updated'}: {record['title']}")
+        if args.fetch:
+            path, notes = verify.fetch(args.topic, source_id)
+            for note in notes:
+                print(f"note: {note}")
+            print(path)
         return 0
     if args.action == "list":
         for source in ledger.load(args.topic):
@@ -125,13 +131,15 @@ def register(commands) -> None:
     topic_parser = commands.add_parser("topic", help="study topics")
     topic_parser.set_defaults(run=topic_command)
     topic = topic_parser.add_subparsers(dest="action", required=True)
-    topic.add_parser("new").add_argument("name")
+    topic_new = topic.add_parser("new", help="learn: a subject to learn; research: a question to answer")
+    topic_new.add_argument("name")
+    topic_new.add_argument("--kind", default="learn", choices=topics.KINDS)
     topic.add_parser("list")
     check = topic.add_parser(
         "check", help="fail unless the named files are written, sources resolve and quotes match raw/, "
                       "and every wiki claim traces to a source")
     check.add_argument("topic")
-    check.add_argument("--has", help="comma-separated: mission, map, path, sources")
+    check.add_argument("--has", help="comma-separated: mission, map, path, sources, report")
     check.add_argument("--no-links", action="store_true", help="skip network checks")
 
     source_parser = commands.add_parser(
@@ -161,6 +169,7 @@ def register(commands) -> None:
     add.add_argument("--why", default="")
     add.add_argument("--quote", default="", help="a passage copied exactly from the source")
     add.add_argument("--group", default="", help="independence group: sources that echo one origin share it")
+    add.add_argument("--fetch", action="store_true", help="also save its text to raw/, as `sources fetch` does")
     source.add_parser("list").add_argument("topic")
     fetch = source.add_parser(
         "fetch", help="save a source's text to raw/: its abstract or page, or with --file text you read yourself")

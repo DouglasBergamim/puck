@@ -81,7 +81,7 @@ def fetch(topic: str, source_id: str, force: bool = False) -> tuple[Path, list[s
     if source.get("abstract"):
         sections.append("## Abstract\n\n" + source["abstract"])
     url = source.get("url") or (f"https://doi.org/{source['doi']}" if source.get("doi") else "")
-    if url and source["kind"] in ("web", "doc"):
+    if url and source["kind"] in ("web", "doc", "course", "discussion"):
         try:
             status, body, final = net.fetch(url)
             kind = "html" if b"<html" in body[:2000].lower() or b"<!doctype html" in body[:2000].lower() else "other"
@@ -132,11 +132,11 @@ def resolves(source: dict) -> tuple[bool | None, str]:
     return bool(source.get("refs")), "found through a provider; no DOI or URL to check"
 
 
-def verify(topic: str, check_links: bool = True) -> tuple[list[str], list[str]]:
-    """Errors fail the check. Warnings are shown but don't."""
+def verify(topic: str, check_links: bool = True, require_sources: bool = True) -> tuple[list[str], list[str]]:
+    """Errors fail the check. Warnings are shown but don't. An empty ledger fails only if sources are required."""
     errors, warnings = [], []
     sources = ledger.load(topic)
-    if not sources:
+    if not sources and require_sources:
         errors.append("sources.json is empty.")
     for source in sources:
         label = f"{source['id']} ({source['title'][:60]})"

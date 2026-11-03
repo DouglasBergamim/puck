@@ -1,7 +1,7 @@
 """The shape every provider returns, and how duplicates are recognised.
 
 A record is a plain dict, so it can go straight into sources.json:
-  kind      paper | survey | book | doc | web
+  kind      paper | survey | book | course | doc | web | discussion
   title, authors (at most 5), year, venue, doi, url, abstract
   cited_by  citation count
   editions  edition count, for books
@@ -11,7 +11,7 @@ A record is a plain dict, so it can go straight into sources.json:
 import re
 import unicodedata
 
-KINDS = ("paper", "survey", "book", "doc", "web")
+KINDS = ("paper", "survey", "book", "course", "doc", "web", "discussion")
 
 
 def make(**fields) -> dict:

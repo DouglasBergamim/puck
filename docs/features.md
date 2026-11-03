@@ -57,36 +57,43 @@ Useful along the way:
 - **Session ended mid-task?** Open `claude` in the same folder. The `resume` hook shows the open task's checklist, so you can say "continue".
 - **Parallel work:** ask the agent to start the task with `--worktree`. Each worktree sees only its own task.
 
-### 4. Example: learning a topic
+### 4. Example: learning a subject
 
-Pick the researcher and say what you're curious about:
-
-```
-> I want the researcher. I want to research game theory in finance.
-```
-
-Or just say "I want to learn information theory": the step skills work without a lead too. Either way, each stage asks you before it moves on.
-
-What follows is a conversation. The skill doing each part is in brackets:
-
-1. **[scope]** The agent asks why you want it, how deep to go (orient, use or master), how much time you have and what you know. Then a few quick questions place your real level. It writes `mission.md`.
-2. **[field-map]** "Here are the main areas, and what depends on what. Anything to drop?" You prune, and it writes `map.md`.
-3. **[literature]** "Shall I find the key papers and books?" 3–5 `source-finder` agents search in parallel. Then `puck topic check` and the `claim-checker` agent verify every source and claim, and it writes `sources.json`, `raw/` and short `wiki/` pages.
-4. **[reading-path]** "Here's what to read, in order": 3–7 stages, each with exact sections, a time estimate and a checkpoint question. It writes `path.md`.
-
-Everything lands in `context/knowledge/information-theory/`. You can stop anywhere, and start mid-chain too: "find the main papers on attention" goes straight to literature.
-
-Then study, in as many sessions as you like:
+Pick the professor and say what you want to learn:
 
 ```
-> I want the tutor. Let's continue with information theory.
+> /puck:professor I want to learn game theory applied to finance
 ```
 
-- Each session opens by asking what you remember from last time. Then the agent picks the next concept whose prerequisites you've practised.
-- You try each idea before it's explained.
+Or just say "I want to learn information theory". After at most one round of questions it runs to the end, saying what each stage produced; step in whenever you want to change something. The skill doing each part is in brackets:
+
+1. **[scope]** It drafts the mission from what you said: the subject (game theory), where it's applied (finance), a goal you could be tested on, and the depth (orient, use or master). It asks at most two questions in one go, such as what's at the centre and what it's for. It doesn't ask about your time or quiz your level. It writes `mission.md`.
+2. **[curriculum]** Two `source-finder` agents search in parallel: one for how the subject is taught (textbooks, courses, syllabi, reading lists and "best book" discussions; docs and articles for tech), one for the application's classics. `puck topic check` verifies every link and quote. It writes `sources.json` and `raw/`.
+3. **[roadmap]** 3–7 stages from the subject's foundations out to the application, in the order the syllabi and textbooks agree on. Each has chapters or lectures, a time estimate and a checkpoint question; the last checkpoint is your goal. It writes `path.md` and the concept table in `map.md`.
+
+Everything lands in `context/knowledge/<topic>/`. Then study, in as many sessions as you like:
+
+```
+> /puck:professor Let's continue with game theory.
+```
+
+- The first session starts from what you said you know; your first attempt shows your real level. Later sessions open by asking what you remember from last time.
+- The agent picks the next concept whose prerequisites you've practised, and you try it before it's explained.
 - "Show me" gets a diagram, or an interactive HTML page that opens in your browser.
 - "Give me an exercise" gets one with the answer key or tests written first, and grading by a separate agent or by the tests.
 - At the end, the session is recorded and the concept statuses are updated.
+
+### 5. Example: a research question
+
+```
+> /puck:researcher What's known about high-frequency trading and liquidity?
+```
+
+1. **[scope]** The question, what it's for, the areas to cover and the depth, in `mission.md`.
+2. **[field-map]** Subfields, concepts and debates for those areas, in `map.md`.
+3. **[literature]** One `source-finder` per subtopic plus one for criticism. Then `puck topic check` and the `claim-checker` agent verify every source and claim, and it writes `wiki/` pages.
+4. **[report]** `report.md`: the answer, what's settled, what's disputed and by whom, what's open, and what to read first, every claim cited.
+
 
 Other things you can just say:
 - "Where am I with information theory?"
@@ -107,25 +114,32 @@ Skills run in your conversation. In Claude Code, call one as `/puck:<name>`, or 
 | `plan` | An undecided goal: interviews you and writes a one-page spec | `SPEC.md` | — | `task` |
 | `review` | Reviewing a change or diff against its `SPEC.md` or requirement, or checking it's ready to merge | `review.md` | `reviewer` | — |
 
-### Research
-
-Run them in this order for a new topic, or enter the chain anywhere.
+`scope` is shared: it writes the mission for both chains, from `mission-learn.md` or `mission-research.md`.
 
 | Skill | Use it for | Writes | Spawns | Hands off to |
 |---|---|---|---|---|
-| `scope` | "I want to learn X": the question, why, depth (orient, use or master), time, background, and a probe of your real level | `mission.md`, starting concept statuses | — | `field-map` |
-| `field-map` | "What are the main areas of X?": subfields, concepts, questions, debates and prerequisites, which you prune | `map.md` | — | `literature` |
-| `literature` | "Find the key papers and books on X": searches by subtopic, verifies sources and claims, writes wiki pages | `sources.json`, `raw/`, `wiki/` | `source-finder` (3–5 at once), `claim-checker` | `reading-path` |
-| `reading-path` | "What should I read, and in what order?": 3–7 stages with exact sections, time and a checkpoint question | `path.md` | — | `teach` |
+| `scope` | "I want to learn X" or "what's known about Q?": drafts the mission, then asks at most two questions in one go | `mission.md` | — | `curriculum` or `field-map` |
 | `kb` | Adding a source you give it to a topic's notes, or answering from those notes with citations | `raw/`, `wiki/` | — | — |
 
 ### Learning
 
+Run them in this order for a new subject, or enter the chain anywhere.
+
 | Skill | Use it for | Writes | Spawns | Hands off to |
 |---|---|---|---|---|
+| `curriculum` | "What should I learn X from?": textbooks, courses, syllabi, reading lists, discussions, and the application's classics | `sources.json`, `raw/` | `source-finder` (2 at once) | `roadmap` |
+| `roadmap` | "What should I read, and in what order?": 3–7 stages from foundations to application, with chapters, time and a checkpoint question | `path.md`, `map.md` | — | `teach` |
 | `teach` | A study session: recall of last time, the next concept, your attempt before any explanation, then a record. Opens no task | `sessions/NNNN.md`, statuses in `map.md` | — | `practice`, `visualize` |
 | `practice` | Exercises, with the answer key or tests written before you start | `exercises/<id>/` | `grader` for non-code exercises | `teach` |
 | `visualize` | A Mermaid diagram, or a self-contained HTML page with steppers or sliders, when seeing it beats reading it | `visuals/*.html` | — | — |
+
+### Research
+
+| Skill | Use it for | Writes | Spawns | Hands off to |
+|---|---|---|---|---|
+| `field-map` | "What are the main areas of research on Q?": subfields, concepts, debates and prerequisites, within the mission's areas | `map.md` | — | `literature` |
+| `literature` | "Find the key papers on Q": searches by subtopic plus criticism, verifies sources and claims, writes wiki pages | `sources.json`, `raw/`, `wiki/` | `source-finder` (3–5 at once), `claim-checker` | `report` |
+| `report` | "What does the literature conclude?": the answer, what's settled, disputed and open, and what to read first, all cited | `report.md` | — | — |
 
 ## Agents
 
@@ -137,14 +151,14 @@ Every agent file lists its workflow, tools, skills and the workers it may start.
 
 ### Leads: pick one after starting your harness
 
-Start `claude`, or any harness, as usual. Then type the lead's skill, or just ask for it: "I want the researcher". The session takes on that role. Every harness supports skills, so this works the same everywhere; in Claude Code the skill is `/puck:<name>`.
+Start `claude`, or any harness, as usual. Then type the lead's skill, or just ask for it: "I want the professor". The session takes on that role. Every harness supports skills, so this works the same everywhere; in Claude Code the skill is `/puck:<name>`.
 
 Leads ask you decisions, such as your goal or depth, through the harness's question tool: in Claude Code, a list of options you can click, with your own answer always possible. Harnesses without one ask in plain text. Recall, attempts and checks in study sessions stay open questions, because a list of options would give the answer away.
 
 | Lead | Pick it with | Workflow | Skills it uses | Workers it starts |
 |---|---|---|---|---|
-| `researcher` | `/puck:researcher`, or "I want the researcher" | 1. Clarifies your goal, interests, depth, time and background, one question at a time.<br>2. Maps the field.<br>3. Finds and verifies the literature.<br>4. Orders the reading.<br>5. Hands over to the tutor.<br>It searches nothing until you approve the mission | `scope`, `field-map`, `literature`, `reading-path`, `kb` | `source-finder`, `claim-checker` |
-| `tutor` | `/puck:tutor`, or "I want the tutor" | Recall of last time, then the next concept, your attempt, an explanation, practice and visuals, and a record of the session | `teach`, `practice`, `visualize`, `kb` | `grader` |
+| `professor` | `/puck:professor`, or "I want to learn X" | **Plan**, once per topic: 1. Scope the mission. 2. Find how the subject is taught. 3. Build the roadmap.<br>**Study**, every session after: recall of last time, the next concept, your attempt, an explanation, practice and visuals, and a record of the session.<br>Only scoping asks you anything | `scope`, `curriculum`, `roadmap`, `teach`, `practice`, `visualize`, `kb` | `source-finder`, `grader` |
+| `researcher` | `/puck:researcher`, or "what's known about Q?" | 1. Scope the question.<br>2. Map the field.<br>3. Find and verify the literature, with its critics.<br>4. Write a cited report.<br>Only scoping asks you anything; it searches nothing until the mission is written | `scope`, `field-map`, `literature`, `report`, `kb` | `source-finder`, `claim-checker` |
 
 ### Workers: started by skills
 
@@ -152,7 +166,7 @@ You rarely call a worker yourself. In Claude Code you can @-mention one, for exa
 
 | Agent | Does | Tools | Give it | Started by |
 |---|---|---|---|---|
-| `source-finder` | Finds and records sources for one subtopic, each with an exact quote as evidence. Refuses a topic without an approved `mission.md` | read, web, shell | Topic, one subtopic as a question, the mission's goal and depth, search limit | `literature` |
+| `source-finder` | Finds and records sources for one brief, starting from what people recommend (syllabi, reading lists, discussions, docs) before the academic search, each with an exact quote as evidence. Refuses a topic without a `mission.md` | read, web, shell | Topic, one brief, the mission's subject or question and depth, about 12 searches and at most 6 sources | `curriculum`, `literature` |
 | `claim-checker` | Checks each wiki claim against the source text it cites | read | Wiki page paths and the topic folder | `literature` |
 | `grader` | Scores an attempt 0 or 1 per rubric criterion, without seeing the teaching conversation | read | The attempt, plus `prompt.md`, `key.md` and `rubric.md` | `practice` |
 | `reviewer` | Reviews a code change with fresh eyes | read, shell-read | The change or diff range, and the requirement | `review` |
@@ -201,12 +215,12 @@ Source references look like `openalex:W…`, `s2:…`, `arxiv:…`, `ol:OL…W` 
 
 | Command | Does | Pre-approved |
 |---|---|---|
-| `puck topic new "<name>"` | Creates a topic folder with templates | yes |
+| `puck topic new "<name>" [--kind learn\|research]` | Creates a topic folder with templates. The kind picks the mission template: a subject to learn (default) or a question to research | yes |
 | `puck topic list` | Lists topics | yes |
-| `puck topic check <topic> [--has mission,map,path,sources] [--no-links]` | The one validator for a topic. Fails unless the named files are written, DOIs and URLs resolve, quotes match `raw/`, and every wiki claim cites a source whose `raw/` text holds its quotes and numbers. Rebuilds the wiki's `index.md` | yes |
+| `puck topic check <topic> [--has mission,map,path,sources,report] [--no-links]` | The one validator for a topic. Fails unless the named files are written (a mission needs each of its sections filled and a valid depth), DOIs and URLs resolve, quotes match `raw/`, and every wiki claim cites a source whose `raw/` text holds its quotes and numbers. Rebuilds the wiki's `index.md` | yes |
 | `puck sources search "<query>" [--kind any\|paper\|survey\|book] [--limit N] [--json]` | Searches OpenAlex, Semantic Scholar, arXiv and Open Library, merged and ranked by citations | yes |
 | `puck sources graph <ref> [--direction references\|cited-by] [--limit N] [--since YEAR]` | What a work builds on, or what builds on it | yes |
-| `puck sources add <topic> <ref>` or `--url … --title …` | Adds or merges a ledger entry. Options: `--role anchor\|canon\|frontier\|textbook\|practical\|critique`, `--why`, `--quote`, `--group`, `--kind`, `--author`, `--year` | yes |
+| `puck sources add <topic> <ref>` or `--url … --title …` | Adds or merges a ledger entry. Options: `--role anchor\|canon\|frontier\|textbook\|practical\|critique\|recommendation`, `--kind paper\|survey\|book\|course\|doc\|web\|discussion`, `--why`, `--quote`, `--group`, `--author`, `--year`, and `--fetch` to save its text to `raw/` in the same command | yes |
 | `puck sources list <topic>` | Lists the ledger | yes |
 | `puck sources fetch <topic> <id> [--file F\|- --origin "<url, pages>"] [--force]` | Saves a source's text to `raw/`: its abstract or page, or with `--file`, text an agent read itself, such as from a PDF | yes |
 | `puck learn status <topic>` | Concept statuses and the last session | yes |

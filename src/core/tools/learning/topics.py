@@ -1,7 +1,7 @@
 """Study topics: one folder each, holding everything a learning session needs.
 
 The concept table in map.md is the learner state. Its row order is the teaching
-order, which the reading-path skill sets. Statuses describe what happened, so no
+order, which the roadmap skill sets. Statuses describe what happened, so no
 status can be read as mastery.
 """
 
@@ -14,8 +14,14 @@ from core.common.errors import PuckError
 STATUSES = ("unseen", "introduced", "practised", "recalled-later", "can-explain")
 READY = STATUSES.index("practised")  # a prerequisite counts once practised
 FOLDERS = ("raw", "wiki", "sessions", "exercises", "visuals")
-FILES = {"mission": "mission.md", "map": "map.md", "path": "path.md", "sources": "sources.json"}
+FILES = {"mission": "mission.md", "map": "map.md", "path": "path.md", "sources": "sources.json",
+         "report": "report.md"}
 TEMPLATE_MARK = "<!-- template -->"
+KINDS = ("learn", "research")
+DEPTHS = ("orient", "use", "master")
+# Mission sections each kind must fill. Applied to and Bounds are optional.
+MISSION = {"learn": ("Subject", "Goal", "Why", "Depth", "Out of scope", "Background"),
+           "research": ("Question", "Why", "Areas", "Depth", "Out of scope", "Background")}
 ROW = re.compile(r"^\|\s*([a-z0-9][a-z0-9-]*)\s*\|(.*)\|\s*$")
 
 
@@ -33,15 +39,18 @@ def folder(name: str) -> Path:
     return path
 
 
-def new(name: str) -> Path:
+def new(name: str, kind: str = "learn") -> Path:
+    """A topic folder. The kind picks the mission template: learn a subject, or research a question."""
+    if kind not in KINDS:
+        raise PuckError(f"--kind must be one of {', '.join(KINDS)}")
     path = paths.topic(slug(name))
     with store.locked(f"topic-{slug(name)}"):
         for sub in FOLDERS:
             (path / sub).mkdir(parents=True, exist_ok=True)
-        for key in ("mission", "map"):
+        for key, template_name in (("mission", f"mission-{kind}.md"), ("map", FILES["map"])):
             target = path / FILES[key]
             if not target.exists():
-                template = (paths.templates() / FILES[key]).read_text()
+                template = (paths.templates() / template_name).read_text()
                 store.write_text(target, template.replace("{topic}", name))
         if not (path / FILES["sources"]).exists():
             store.write_json(path / FILES["sources"], {"sources": []})
@@ -178,7 +187,34 @@ def check(name: str, required: list[str]) -> list[str]:
                 problems.append("sources.json has no sources")
         elif not is_filled(target):
             problems.append(f"{FILES[key]} is missing or still a template")
+        elif key == "mission":
+            problems += mission_problems(target.read_text())
     if "map" in required and not problems:
         if not concepts(name):
             problems.append("map.md has no rows in its ## Concepts table")
+    return problems
+
+
+def sections(text: str) -> dict[str, str]:
+    """Each `## ` heading's text, without HTML comments, which templates use for guidance."""
+    found, current = {}, None
+    for line in re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL).splitlines():
+        if line.startswith("## "):
+            current = line[3:].strip()
+            found[current] = ""
+        elif current:
+            found[current] += line.strip() + "\n"
+    return {heading: body.strip() for heading, body in found.items()}
+
+
+def mission_problems(text: str) -> list[str]:
+    """A mission is filled when its kind's sections have text and Depth is one word from DEPTHS."""
+    found = sections(text)
+    kind = "learn" if "Subject" in found else "research" if "Question" in found else None
+    if not kind:
+        return ["mission.md needs a ## Subject (learn) or a ## Question (research) section"]
+    problems = [f"mission.md: ## {heading} is empty" for heading in MISSION[kind] if not found.get(heading)]
+    depth = found.get("Depth", "").split()
+    if depth and depth[0].strip(".").lower() not in DEPTHS:
+        problems.append(f"mission.md: ## Depth must start with one of {', '.join(DEPTHS)}")
     return problems

@@ -1,42 +1,45 @@
 ---
 name: scope
 description: >-
-  Pin down what the user wants to learn or research: the question, why, how deep,
-  time, and what they already know, then probe their real level. Use when the user
-  says they want to learn, study or research a subject, or a topic has no mission
-  yet. Not for planning software (use plan) or for a quick factual question.
+  Write a topic's mission: for learning, the subject, what it's applied to, the
+  goal and the depth; for research, the question, why, the areas and the depth.
+  Use when the user says they want to learn, study or research something, or a
+  topic has no mission yet. Not for planning software (use plan) or for a quick
+  factual question.
 metadata:
-  version: "1"
+  version: "4"
   status: active
   invocation: model
   requires: "shell"
   origin: "milestone-3"
   last_evaluated: "never"
-  credits: "Bracketed probe idea from amosblomqvist/learn; mission file idea from mattpocock/skills teach"
+  credits: "Mission file idea from mattpocock/skills teach"
 ---
 ## Procedure
-1. Run `puck topic list`. If the topic exists, run `puck learn status <topic>` and read its `mission.md`; only fill gaps. Otherwise run `puck topic new "<name>"`.
-2. For a full research run, start a task first: `puck task start "Research <topic>" --type research`, then follow the task skill around this chain.
-3. Take everything the user already said, in their message or after the skill's name, as answered. Interview them only on what's missing, with the ask capability: at most two questions at a time, each with two to four options and your recommended one first, so one click is enough. The user can always answer in their own words. Cover:
-   - the question they want answered, or what they want to be able to do;
-   - why, because that decides what to leave out;
-   - depth: `orient` (know the map), `use` (apply it) or `master` (derive it and build on it);
-   - time per week and any deadline;
-   - what they already know, in their words.
-4. Write `mission.md` from the answers. Remove the `<!-- template -->` line. Record anything still undecided as a provisional choice, marked as such.
-5. If the user wants to learn the topic (not only a reading list), run the probe in `references/probe.md` and add what it found under Background.
-6. Run `puck topic check <topic> --has mission`.
+1. **Kind.** `learn` when the user wants to learn or study a subject; `research` when they want to know what's known about a question. The lead that loaded you says which; otherwise take it from the request, and don't ask.
+2. **Topic.** Run `puck topic list`. If the user named no subject, or one close to an existing topic, ask whether to continue that topic or start a new one. To continue, read its `mission.md` and only fill gaps. Otherwise run `puck topic new "<name>" --kind <kind>`.
+3. For a full run, start a task first: `puck task start "<goal>" --type <kind>`, then follow the task skill around this chain.
+4. **Draft first.** Fill every section of the new `mission.md` from what the user already said; its comments say what each section holds and which later step reads it. Everything the user said counts as answered.
+   - In "X applied to Y" or "X for Y", the subject is usually X, taught from its foundations, and Y is where it's applied. Never shrink the subject to the part Y uses, and never put its foundations out of scope.
+   - The Goal is something the user could be asked to do at the end: "By the end I can …".
+5. **Ask once.** In one call to the ask capability, ask at most two questions: those whose answers would change the mission most. Skip any the user already answered.
+   - **What's at the centre**, when a learning request joins two subjects: "X itself, with Y as the examples", or "the Y models built on X". If the user wants current research instead, suggest the researcher.
+   - **What it's for**, if unsaid: 3-4 concrete uses, the likeliest first. It sets the goal, the depth and what's out.
+   - **Which areas**, for a broad research question: 4-6 areas, with multiple answers allowed. A learning mission has no areas: the curriculum search finds them.
+6. Set depth from the purpose: `orient`, `use` or `master`. Ask only if the purpose leaves it open.
+7. Write the answers into `mission.md`, delete the comments, and remove the `<!-- template -->` line.
+8. Run `puck topic check <topic> --has mission` and fill whatever it reports empty.
+9. Show the mission in a few lines and move on. The user can step in to change it.
 
 ## Output
-A filled `mission.md`, and when probed, the user's level per strand.
+A filled `mission.md`.
 
 ## Done when
 - [ ] `puck topic check <topic> --has mission` passes.
-- [ ] Depth is one of orient, use or master.
-- [ ] The user confirmed the mission, or it is marked provisional.
+- [ ] A learning mission's subject is taught from its foundations; a research mission's question could be answered in a paragraph.
 
 ## If something fails
-If the user can't say how deep, recommend `orient` and say they can deepen later. Next step: `field-map`, unless the user only wanted the mission.
+If the user can't choose, take the likeliest purpose and `orient`, say so in the mission, and tell the user they can widen it later. Next step: `curriculum` for learning, `field-map` for research, unless the user only wanted the mission.
 
 ## Host differences
 Read references/host-tools.md if a named capability is unclear.
