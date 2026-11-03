@@ -6,7 +6,7 @@ import webbrowser
 from pathlib import Path
 
 from core.common.errors import PuckError
-from core.tools.learning import exercises, kb, sources, topics
+from core.tools.learning import exercises, kb, roadmap, sources, topics
 from core.tools.learning.sources import ledger, verify
 from core.tools.learning.sources.record import KINDS, make
 
@@ -113,6 +113,11 @@ def learn_command(args) -> int:
                 raise PuckError(f"--status takes concept=status, got '{item}'")
             statuses[concept_id.strip()] = status.strip()
         print(topics.record(args.topic, _read(args.file), statuses))
+    elif args.action == "roadmap":
+        page = roadmap.render(args.topic)
+        if not args.no_open:
+            webbrowser.open(page.as_uri())
+        print(page)
     elif args.action == "open":
         path = Path(args.path).expanduser().resolve()
         if not path.exists():
@@ -188,6 +193,10 @@ def register(commands) -> None:
     record.add_argument("topic")
     record.add_argument("--file", required=True, help="the record, or - for stdin")
     record.add_argument("--status", action="append", help="concept=status; repeatable")
+    page = learn.add_parser("roadmap", help="write the topic's roadmap page from path.md, map.md and sources.json, "
+                                           "and open it")
+    page.add_argument("topic")
+    page.add_argument("--no-open", action="store_true", help="only write the page")
     learn.add_parser("open", help="open an HTML visual in the browser").add_argument("path")
     exercise_check = learn.add_parser("check", help="run a code exercise's tests; only exit 0 passes")
     exercise_check.add_argument("topic")

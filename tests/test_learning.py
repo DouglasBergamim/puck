@@ -9,7 +9,7 @@ import pytest
 
 from cli import main as cli
 from core.common.errors import PuckError
-from core.tools.learning import exercises, kb, sources, topics
+from core.tools.learning import exercises, kb, roadmap, sources, topics
 from core.tools.learning.sources import arxiv, ledger, net, openalex, openlibrary, semantic_scholar, verify
 from core.tools.learning.sources.record import dedupe, make
 
@@ -364,3 +364,86 @@ def test_sources_add_can_fetch_in_the_same_command(topic, offline, capsys):
     assert cli.main(["sources", "add", topic, "--url", "https://forum.example.com/best-books",
                      "--title", "Best books?", "--kind", "discussion", "--role", "recommendation", "--fetch"]) == 0
     assert "Read Osborne first." in (topics.folder(topic) / "raw" / "s1.md").read_text()
+
+
+ROADMAP_MAP = """# Map: game theory
+
+## Concepts
+
+| id | concept | prerequisites | status |
+|---|---|---|---|
+| normal-form | Normal-form game | - | practised |
+| nash | Nash equilibrium | normal-form | unseen |
+| kyle | Kyle model | nash | unseen |
+"""
+
+ROADMAP_PATH = """# Path: game theory for finance
+
+Depth: use. Total time: about 12 hours.
+Order: Gibbons' order, which the MIT course follows [s1].
+Agreed: {agreed}
+
+## Stage 1: Static games
+- Goal: find a Nash equilibrium.
+- Concepts: normal-form, nash.
+- Read: [s1] chapter 1. Why this one.
+- Time: about 6 hours.
+- Checkpoint: find every equilibrium of a 2x2 game.
+
+## Stage 2: Informed trading
+- Goal: solve Kyle.
+- Concepts: kyle
+- Read: [s1] the Kyle chapter, and [s99] which isn't in the ledger.
+- Time: about 6 hours.
+- Checkpoint (the mission's Goal): model a market maker facing an informed trader.
+
+## Skip unless
+- [s1] the appendix, for the proofs.
+"""
+
+
+def roadmap_topic(agreed):
+    topics.new("Game theory")
+    folder = topics.folder("game-theory")
+    (folder / "mission.md").write_text(LEARN_MISSION)
+    (folder / "map.md").write_text(ROADMAP_MAP)
+    (folder / "path.md").write_text(ROADMAP_PATH.format(agreed=agreed))
+    ledger.add("game-theory", make(title="Game Theory for Applied Economists", url="https://example.edu/gibbons",
+                                   year=1992, kind="book"), role="textbook")
+    return folder
+
+
+def test_study_waits_until_the_roadmap_is_agreed(puck_home):
+    roadmap_topic("not yet")
+    assert topics.agreed("game-theory") is False
+    with pytest.raises(PuckError, match="isn't agreed yet"):
+        topics.next_concept("game-theory")
+    assert "Roadmap: not agreed yet" in topics.status_report("game-theory")
+    path = topics.folder("game-theory") / "path.md"
+    path.write_text(path.read_text().replace("Agreed: not yet", "Agreed: 2026-11-03"))
+    assert topics.next_concept("game-theory")["id"] == "nash"
+
+
+def test_a_topic_without_a_roadmap_is_not_blocked(topic):
+    assert topics.agreed(topic) is None
+
+
+def test_roadmap_page_shows_stages_statuses_and_sources(puck_home):
+    folder = roadmap_topic("not yet")
+    page = roadmap.render("game-theory")
+    assert page == folder / "visuals" / "roadmap.html"
+    text = page.read_text()
+    assert "<title>Roadmap: game theory for finance</title>" in text
+    assert "Draft roadmap: not agreed yet" in text
+    assert text.count('<li class="stage') == 2 and "you are here" in text  # stage 1 is unfinished
+    assert 'class="chip practised"' in text and "Kyle model" in text and "not in map.md" not in text
+    assert 'href="https://example.edu/gibbons"' in text and "[s99]" in text  # unknown ids stay as text
+    assert "1 of 3 concepts practised" in text and "about 12 hours" in text
+    assert "http" not in text.split("<style>")[1].split("</style>")[0]  # no network in the page itself
+    (folder / "path.md").write_text(ROADMAP_PATH.format(agreed="2026-11-03"))
+    assert "Draft roadmap" not in roadmap.render("game-theory").read_text()
+
+
+def test_roadmap_page_needs_a_written_path(topic):
+    with pytest.raises(PuckError, match="path.md"):
+        roadmap.render(topic)

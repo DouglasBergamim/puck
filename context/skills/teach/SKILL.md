@@ -18,14 +18,14 @@ metadata:
 ## Procedure
 Study sessions don't open a task: the topic folder holds the state.
 
-1. **Orient.** Run `puck learn status <topic>`. No topic or no mission: use `scope` first. No `path.md` or map: use `curriculum`, then `roadmap`. Read `path.md`, and the profile's `friction` setting (`guided` by default).
+1. **Orient.** Run `puck learn status <topic>`. No topic or no mission: use `scope` first. No `path.md` or map: use `curriculum`, then `roadmap`. If `puck learn status` says the roadmap isn't agreed, follow `roadmap`'s show-and-agree steps first: teaching starts only after the user's yes. Read `path.md`, and the profile's `friction` setting (`guided` by default).
 2. **Recall**, unless this is the first session. On the first session, read the mission's Background instead: the attempt in step 4 shows the user's real level, and a concept they already know can be marked `introduced` and passed. Otherwise ask the user to rate their confidence (0-100) on the last session's concepts, then to write what they remember without help. Then give a gap map: accurate, missing, misconceived. Don't teach yet.
 3. **Choose.** Run `puck learn next <topic>`. Tell the user the concept and why it comes now. A recall gap from step 2 can come first.
 4. **Attempt first.** Before explaining, ask one question that makes the user predict, guess or try: "What do you think happens if…?", "How would you…?". First exposure to something entirely new is exempt: give a short orientation, then ask.
 5. **Explain** from the topic's wiki and sources, citing ledger ids, and point to the stage's reading in `path.md`. Mark anything not from them `[not in sources]`. Build on the user's attempt, including what was right in it. Use `visualize` when the idea is a structure, a process over time, a parameter that changes something, or a space.
 6. **Check.** Ask the user to explain it back or apply it to a new case. Use `practice` for a graded exercise.
 7. **Update.** A concept becomes `introduced` once explained, and `practised` only after a correct attempt on a new case. Never mark more than one status step from one answer.
-8. **Close.** Write the record from `$PUCK_HOME/context/templates/session.md` and run `puck learn record <topic> --file <record> --status <id>=<status>`. Tell the user what's next.
+8. **Close.** Write the record from `$PUCK_HOME/context/templates/session.md` and run `puck learn record <topic> --file <record> --status <id>=<status>`. Refresh the progress view with `puck learn roadmap <topic> --no-open`. Tell the user what's next.
 
 ## Rules
 - End your message right after any question. No hints, options or "for example" after it.

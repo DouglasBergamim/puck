@@ -1,6 +1,6 @@
 ---
 name: retro
-description: Classify a finished task's findings and capture them. Run at task close when findings exist.
+description: Classify a finished task's findings and capture them. Use when the task skill closes a task that has findings.
 tools: [read, shell, edit]
 model: strong
 max_turns: "30"

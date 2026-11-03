@@ -92,11 +92,24 @@ def concepts(name: str) -> list[dict]:
     return rows
 
 
+def agreed(name: str) -> bool | None:
+    """Whether the user said yes to the roadmap: None with no path.md, else whether `Agreed:` holds a date."""
+    path = folder(name) / FILES["path"]
+    if not is_filled(path):
+        return None
+    match = re.search(r"^Agreed:\s*(.*)$", path.read_text(), re.MULTILINE)
+    return bool(match and re.match(r"\d{4}-\d{2}-\d{2}", match.group(1).strip()))
+
+
 def next_concept(name: str) -> dict | None:
     """The first concept, in teaching order, that is unfinished and whose prerequisites are practised.
 
     When nothing new is ready, return the practised concept least far along, for recall.
+    A roadmap the user hasn't agreed to blocks study: teaching starts only after their yes.
     """
+    if agreed(name) is False:
+        raise PuckError(f"The roadmap for {name} isn't agreed yet. Show it with `puck learn roadmap {name}`, "
+                        "get the user's yes, then set `Agreed: <YYYY-MM-DD>` in path.md.")
     rows = concepts(name)
     rank = {row["id"]: STATUSES.index(row["status"]) for row in rows}
     for row in rows:
@@ -158,7 +171,10 @@ def status_report(name: str) -> str:
     if missing:
         lines.append("Not written yet: " + ", ".join(f"{k}.md" for k in missing))
     lines.append("Concepts: " + ", ".join(f"{n} {s}" for s, n in counts.items() if n) if rows else "Concepts: none yet")
-    upcoming = next_concept(name) if rows else None
+    if agreed(name) is False:
+        lines.append(f"Roadmap: not agreed yet. Show it with `puck learn roadmap {slug(name)}` and get the user's yes "
+                     "before any teaching.")
+    upcoming = next_concept(name) if rows and agreed(name) is not False else None
     if upcoming:
         lines.append(f"Next: {upcoming['id']} ({upcoming['concept']}), now {upcoming['status']}")
     done = sessions(name)

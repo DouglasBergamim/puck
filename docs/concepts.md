@@ -89,7 +89,7 @@ A workflow is a fixed sequence of stages that a lead runs. Each stage delivers s
 | Lead | Stages |
 |---|---|
 | `researcher` | scope → map → literature → report |
-| `professor` | scope → curriculum → roadmap → study, which repeats with no task |
+| `professor` | scope → curriculum → roadmap → study, which repeats with no task and starts only once you agree the roadmap |
 | `engineer` | onboard → plan → build → commit, the last only when you ask |
 | `constructor` | classify → design → write → review → activate, the last only on your yes |
 

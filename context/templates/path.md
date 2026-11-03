@@ -3,6 +3,7 @@
 
 Depth: orient | use | master. Total time: about N hours.
 Order: why this order, citing the syllabi and textbooks that agree on it, like [s2][s5].
+Agreed: not yet
 
 ```mermaid
 graph LR

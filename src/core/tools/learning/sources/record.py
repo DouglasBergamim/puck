@@ -47,6 +47,9 @@ def keys(record: dict) -> set[str]:
     found = set()
     if record.get("doi"):
         found.add(f"doi:{record['doi']}")
+    url = re.sub(r"^https?://(www\.)?", "", (record.get("url") or "").strip().lower()).rstrip("/")
+    if url and not url.startswith("doi.org/"):
+        found.add(f"url:{url}")
     for provider, value in record.get("refs", {}).items():
         if provider == "arxiv":
             value = re.sub(r"v\d+$", "", value)

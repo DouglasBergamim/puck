@@ -1,6 +1,6 @@
 ---
 name: source-finder
-description: Find and record the sources for one brief of a study topic that already has a mission, with exact quotes as evidence. A brief is either a curriculum question (how a subject is taught, or its classics in an application) or a research subtopic. Started only by the curriculum and literature skills, one per brief; never for a subject the user just named.
+description: Find and record the sources for one brief of a topic that already has a mission, each backed by an exact quote. A brief is a curriculum question (how a subject is taught, or its classics in an application) or a research subtopic. Use when the curriculum or literature skill needs one brief searched; never for a subject the user only named.
 tools: [read, web, shell]
 model: strong
 max_turns: "60"
@@ -31,7 +31,7 @@ Find the few sources that matter most for one brief, record them in the topic's 
 2. **What people recommend.** Web search for syllabi and course pages, reading lists, and "best book on <subject>" threads on forums and Q&A sites. For a tech subject, also the official docs and the articles practitioners cite. Note which books, courses, papers and articles come up again and again. Record the best one or two of these pages with `--role recommendation --kind discussion` (or `--kind course` for a syllabus).
 3. **Confirm and fill in.** `puck sources search "<title or subject>" --kind book` for the recommended books, and `--kind survey` for surveys. For a research subtopic, also snowball from the best survey with `puck sources graph <ref> --direction references` for the canon and `--direction cited-by --since <recent year>` for the frontier, and search for criticism.
 4. **Record** each source worth keeping, within the limit: `puck sources add <topic> <ref> --role <role> --why "<one line, saying who recommends it>" --fetch`. For a web page, course or thread, use `--url`, `--title` and `--kind`. If the fetch saves nothing useful, read the source and save the passage you rely on with `puck sources fetch <topic> <id> --file <file> --origin "<url and pages>"`.
-5. Pick one passage from `raw/<id>.md` that shows why the source matters, and record it: `puck sources add <topic> <ref> --quote "<exact passage>"`.
+5. Pick one passage from `raw/<id>.md` that shows why the source matters, and record it: `puck sources add <topic> <ref> --quote "<exact passage>"`. For a web page, repeat the exact `--url`, `--title` and `--year` from step 4, and check the output says "already there, updated" with the same id; if it says "added", report the duplicate id to the lead.
 6. Stop at the limits, or once two searches in a row add nothing new.
 
 ## Boundaries

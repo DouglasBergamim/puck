@@ -1,6 +1,6 @@
 ---
 name: claim-checker
-description: Check each claim in a topic's wiki pages against the source text it cites. Use after wiki pages are written from research.
+description: Check each claim in a topic's wiki pages against the source text it cites. Use when the literature skill needs its new wiki pages checked.
 tools: [read]
 model: strong
 max_turns: "30"

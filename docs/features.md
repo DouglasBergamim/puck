@@ -65,11 +65,11 @@ Pick the professor and say what you want to learn:
 > /puck:professor I want to learn game theory applied to finance
 ```
 
-Or just say "I want to learn information theory". After at most one round of questions it runs to the end, saying what each stage produced; step in whenever you want to change something. The skill doing each part is in brackets:
+Or just say "I want to learn information theory". It asks you at two points: one round of scoping questions, and your yes on the roadmap. In between it runs on its own, saying what each stage produced; step in whenever you want to change something. The skill doing each part is in brackets:
 
 1. **[scope]** It drafts the mission from what you said: the subject (game theory), where it's applied (finance), a goal you could be tested on, and the depth (orient, use or master). It asks at most two questions in one go, such as what's at the centre and what it's for. It doesn't ask about your time or quiz your level. It writes `mission.md`.
 2. **[curriculum]** Two `source-finder` agents search in parallel: one for how the subject is taught (textbooks, courses, syllabi, reading lists and "best book" discussions; docs and articles for tech), one for the application's classics. `puck topic check` verifies every link and quote. It writes `sources.json` and `raw/`.
-3. **[roadmap]** 3–7 stages from the subject's foundations out to the application, in the order the syllabi and textbooks agree on. Each has chapters or lectures, a time estimate and a checkpoint question; the last checkpoint is your goal. It writes `path.md` and the concept table in `map.md`.
+3. **[roadmap]** 3–7 stages from the subject's foundations out to the application, in the order the syllabi and textbooks agree on. Each has chapters or lectures, a time estimate and a checkpoint question; the last checkpoint is your goal. It writes `path.md` and the concept table in `map.md`, then opens the roadmap page in your browser and asks you to agree it or change it. Study starts only after your yes: until `path.md` says `Agreed:` with a date, `puck learn next` refuses.
 
 Everything lands in `context/knowledge/<topic>/`. Then study, in as many sessions as you like:
 
@@ -139,7 +139,7 @@ Run them in this order for a new subject, or enter the chain anywhere.
 | Skill | Use it for | Writes | Spawns | Hands off to |
 |---|---|---|---|---|
 | `curriculum` | "What should I learn X from?": textbooks, courses, syllabi, reading lists, discussions, and the application's classics | `sources.json`, `raw/` | `source-finder` (2 at once) | `roadmap` |
-| `roadmap` | "What should I read, and in what order?": 3–7 stages from foundations to application, with chapters, time and a checkpoint question | `path.md`, `map.md` | — | `teach` |
+| `roadmap` | "What should I read, and in what order?": 3–7 stages from foundations to application, with chapters, time and a checkpoint question, shown as a page in your browser for your yes | `path.md`, `map.md`, `visuals/roadmap.html` | — | `teach` |
 | `teach` | A study session: recall of last time, the next concept, your attempt before any explanation, then a record. Opens no task | `sessions/NNNN.md`, statuses in `map.md` | — | `practice`, `visualize` |
 | `practice` | Exercises, with the answer key or tests written before you start | `exercises/<id>/` | `grader` for non-code exercises | `teach` |
 | `visualize` | A Mermaid diagram, or a self-contained HTML page with steppers or sliders, when seeing it beats reading it | `visuals/*.html` | — | — |
@@ -168,7 +168,7 @@ Leads ask you decisions, such as your goal or depth, through the harness's quest
 
 | Lead | Pick it with | Workflow | Skills it uses | Workers it starts |
 |---|---|---|---|---|
-| `professor` | `/puck:professor`, or "I want to learn X" | **Plan**, once per topic: 1. Scope the mission. 2. Find how the subject is taught. 3. Build the roadmap.<br>**Study**, every session after: recall of last time, the next concept, your attempt, an explanation, practice and visuals, and a record of the session.<br>Only scoping asks you anything | `scope`, `curriculum`, `roadmap`, `teach`, `practice`, `visualize`, `kb` | `source-finder`, `grader` |
+| `professor` | `/puck:professor`, or "I want to learn X" | **Plan**, once per topic: 1. Scope the mission. 2. Find how the subject is taught. 3. Build the roadmap.<br>**Study**, every session after: recall of last time, the next concept, your attempt, an explanation, practice and visuals, and a record of the session.<br>It asks you only at scoping and to agree the roadmap; study waits for that yes | `scope`, `curriculum`, `roadmap`, `teach`, `practice`, `visualize`, `kb` | `source-finder`, `grader` |
 | `researcher` | `/puck:researcher`, or "what's known about Q?" | 1. Scope the question.<br>2. Map the field.<br>3. Find and verify the literature, with its critics.<br>4. Write a cited report.<br>Only scoping asks you anything; it searches nothing until the mission is written | `scope`, `field-map`, `literature`, `report`, `kb` | `source-finder`, `claim-checker` |
 | `engineer` | `/puck:engineer`, or "take this change from the codebase to a commit" | 1. **onboard**: a project brief.<br>2. **plan**: `SPEC.md`, when the goal is undecided.<br>3. **build**: the task skill, through checks, review, retro and close.<br>4. **commit**: only when you ask.<br>Only planning asks you anything | `onboard`, `plan`, `task`, `review`, `commit` | `reviewer`, `retro` |
 | `constructor` | `/puck:constructor`, or "make a Puck skill that…" | 1. **classify**: which primitive, new or a change.<br>2. **design**: drafted, then at most 3 questions.<br>3. **write**: scaffolded and written to `docs/concepts.md`, with evals; `puck lint` passes.<br>4. **review**: the `reviewer` against the spec.<br>5. **activate**: promote or build, only on your yes | `task`, `review` | `reviewer` |
@@ -238,7 +238,8 @@ Source references look like `openalex:W…`, `s2:…`, `arxiv:…`, `ol:OL…W` 
 | `puck sources list <topic>` | Lists the ledger | yes |
 | `puck sources fetch <topic> <id> [--file F\|- --origin "<url, pages>"] [--force]` | Saves a source's text to `raw/`: its abstract or page, or with `--file`, text an agent read itself, such as from a PDF | yes |
 | `puck learn status <topic>` | Concept statuses and the last session | yes |
-| `puck learn next <topic>` | The next concept whose prerequisites are practised | yes |
+| `puck learn next <topic>` | The next concept whose prerequisites are practised. Refuses while the topic's roadmap isn't agreed | yes |
+| `puck learn roadmap <topic> [--no-open]` | Writes the roadmap page, `visuals/roadmap.html`, from `path.md`, `map.md` and `sources.json`, and opens it: the stages with readings, times and checkpoints, each concept's status, and a progress bar | yes |
 | `puck learn record <topic> --file F\|- [--status concept=status …]` | Writes the session record and updates statuses | yes |
 | `puck learn open <path>` | Opens an HTML visual in the browser | yes |
 | `puck learn check <topic> <id>` | Runs a code exercise's tests; only exit 0 passes | — |

@@ -4,7 +4,7 @@ description: >-
   Add a source the user gives you to a topic's notes, or answer from those notes
   with citations. Use when the user shares a paper, chapter, article or link to
   file under a topic, or asks what their notes say about something. Not for
-  searching for new sources (use literature).
+  searching for new sources (use curriculum for a subject to learn, literature for a research question).
 metadata:
   version: "1"
   status: active

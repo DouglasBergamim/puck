@@ -23,15 +23,17 @@ metadata:
 5. Let depth decide the reach: `orient` stays with textbooks and courses and gives the application one overview stage; `use` adds the application's classics and practical sources; `master` adds primary papers and graduate texts.
 6. Write `path.md` from `$PUCK_HOME/context/templates/path.md`, with the Order line citing the sources the order rests on, a "Skip unless" list for sources left out, and a Mermaid diagram of the stages.
 7. Write the concept table in `map.md` from `$PUCK_HOME/context/templates/map.md`: concepts in stage order, ids as lowercase words joined by hyphens, and as prerequisites the earlier concepts each one needs. Statuses start `unseen`; keep any status an existing table already has. Remove the `<!-- template -->` line.
-8. Run `puck learn next <topic>` to confirm the table parses and the first concept has no unmet prerequisites.
-9. Show the stages and total time in a few lines, and offer to start stage 1. If the mission names a deadline, fit the path to it.
+8. **Show it.** Run `puck learn roadmap <topic>`. It checks that `path.md` and the table parse, writes `visuals/roadmap.html` and opens it in the browser. In the conversation, list only the stages with their times, in a few lines, and say the page has the readings and checkpoints. Never paste Mermaid into the conversation: a terminal shows it as raw text.
+9. **Agree it.** With the ask capability, ask one question: "Agree and start stage 1", or "Change something". Apply each change to `path.md` and `map.md` (run `curriculum` again only for a missing source), rerun `puck learn roadmap <topic>`, and ask again. If the mission names a deadline, fit the path to it.
+10. On the user's yes, set `Agreed: <today, YYYY-MM-DD>` in `path.md`. Until then `puck learn next` refuses, so no study session can start.
 
 ## Output
-`path.md`, and `map.md` with a concept table in the same order.
+`path.md` agreed by the user, `map.md` with a concept table in the same order, and the roadmap page `visuals/roadmap.html`.
 
 ## Done when
 - [ ] `puck topic check <topic> --has mission,sources,path,map` passes.
 - [ ] Every source on the path is a ledger id, every concept is in some stage, and the last checkpoint tests the mission's Goal.
+- [ ] The user saw the roadmap page and said yes, and `path.md` says `Agreed:` with the date.
 
 ## If something fails
 If a stage has no good source, say so in the path and run `curriculum` again for that stage only. Next step: `teach`.

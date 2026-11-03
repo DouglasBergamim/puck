@@ -8,5 +8,5 @@ AGENT_COMMANDS = (
     "puck task start", "puck task list", "puck task show", "puck task step", "puck task close",
     "puck note", "puck scratch",
     "puck topic", "puck sources",
-    "puck learn status", "puck learn next", "puck learn record", "puck learn open",
+    "puck learn status", "puck learn next", "puck learn record", "puck learn open", "puck learn roadmap",
 )
