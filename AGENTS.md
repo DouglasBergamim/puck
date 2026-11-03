@@ -5,9 +5,11 @@ A layer in front of any agent harness that optimises the context an LLM gets and
 ## Commands
 
 - Tests: `uv run pytest`
-- Lint primitives: `uv run puck lint`
+- Lint primitives and docs: `uv run puck lint`
+- Lint Python (bugs only): `uv run ruff check src tests`
 - Build harness packages: `uv run puck build`
 - Reinstall after moving code: `uv tool install --editable . --reinstall`
+- Commits and pushes run these through `.githooks/` (turned on by `puck install`). Never bypass them with `--no-verify`.
 
 ## Rules
 

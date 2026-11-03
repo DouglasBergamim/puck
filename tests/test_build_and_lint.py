@@ -15,6 +15,14 @@ def add_skill(home, name, text):
     (directory / "SKILL.md").write_text(text)
 
 
+def write_case(folder, skill="x", fired=1):
+    """One eval case in the shape the runner reads: a prompt and a tool_used grader."""
+    (folder / "graders").mkdir(parents=True, exist_ok=True)
+    (folder / "prompt.md").write_text("---\nmax_turns: 5\nallowed_tools: [Skill]\n---\n\nDo the thing.\n")
+    (folder / "graders" / "skill-fired.md").write_text(
+        f"---\ntype: tool_used\ntool: Skill\ninput_match: '{skill}'\nmin: {fired}\nmax: {fired or 0}\n---\n")
+
+
 def template(name="draft-one"):
     return (paths.templates(REPO) / "skill.md").read_text().replace("skill-name", name)
 
@@ -266,11 +274,8 @@ def test_active_skill_needs_trigger_and_near_miss_evals(puck_home):
     for case in ("triggers", "ignores-other"):
         (paths.skills(puck_home) / "live-one" / "evals" / case).mkdir(parents=True)
     assert any("evals/triggers needs prompt.md" in e for e in lint.lint_all(puck_home))
-    for case in ("triggers", "ignores-other"):
-        folder = paths.skills(puck_home) / "live-one" / "evals" / case
-        (folder / "prompt.md").write_text("Say hi.\n")
-        (folder / "graders").mkdir()
-        (folder / "graders" / "fired.md").write_text("---\ntype: llm\n---\nPASS if hi.\n")
+    for case, fired in (("triggers", 1), ("ignores-other", 0)):
+        write_case(paths.skills(puck_home) / "live-one" / "evals" / case, "live-one", fired)
     assert not any("live-one" in e for e in lint.lint_all(puck_home))
 
 
@@ -308,3 +313,99 @@ def test_agent_new_scaffolds_and_refuses_clashes(puck_home):
         agents.new("task", "lead", "clash")
     with pytest.raises(PuckError, match="--mode"):
         agents.new("x", "boss", "bad mode")
+
+
+def test_lint_root_checks_the_given_copy(puck_home, tmp_path, capsys):
+    import argparse
+    from cli.commands.primitives import run_lint
+    snapshot = tmp_path / "snapshot"
+    shutil.copytree(puck_home / "context", snapshot / "context")
+    assert run_lint(argparse.Namespace(root=str(snapshot))) == 0
+    add_skill(snapshot, "bad", template("bad").replace("## Done when", "## Finished"))
+    assert run_lint(argparse.Namespace(root=str(snapshot))) == 1
+    assert "skills/bad: needs a 'Done when' section" in capsys.readouterr().err
+    assert run_lint(argparse.Namespace(root=None)) == 0  # the real home is untouched
+
+
+def test_eval_format_catches_malformed_cases(puck_home):
+    add_skill(puck_home, "evalled", template("evalled"))
+    case = paths.skills(puck_home) / "evalled" / "evals" / "triggers"
+    write_case(case, "evalled")
+    assert not any("evalled" in e for e in lint.lint_all(puck_home))
+    (case / "prompt.md").write_text("---\nmax_turns: zero\nallowed_tools: Skill\n---\n")
+    (case / "graders" / "skill-fired.md").write_text("---\ntype: tool_used\ntool: Skill\ninput_match: '('\nmin: 2\nmax: 1\n---\n")
+    (case / "graders" / "judge.md").write_text("---\ntype: vibes\n---\n")
+    (case / "graders" / "empty.md").write_text("---\ntype: llm\n---\n")
+    joined = "\n".join(e for e in lint.lint_all(puck_home) if "evalled" in e)
+    for expected in ("max_turns must be a positive", "allowed_tools must be a list", "needs the prompt text",
+                     "isn't a valid pattern", "0 <= min <= max", "type must be one of", "needs its PASS and FAIL"):
+        assert expected in joined, expected
+
+
+def test_features_rows_match_what_exists(puck_home):
+    rows = lambda *names: "\n".join(f"| `{n}` | x |" for n in names) + "\n| `puck lint` | not a row |\n"
+    skills, agents, hooks = {"task", "plan"}, {"reviewer"}, {"resume"}
+    assert lint.features_problems(rows("task", "plan", "reviewer", "resume"), skills, agents, hooks) == []
+    problems = lint.features_problems(rows("task", "reviewer", "resume", "reading-path"), skills, agents, hooks)
+    assert "docs/features.md: no row for skill 'plan'" in problems
+    assert "docs/features.md: row for 'reading-path', which isn't an active skill, agent or hook" in problems
+    assert lint.lint_features(puck_home, skills, agents, hooks) == []  # no docs/ in a bare home
+
+
+def test_doc_references_catch_stale_names(puck_home):
+    docs = puck_home / "docs"
+    docs.mkdir()
+    (docs / "design.md").write_text(
+        "| Research | The `researcher` lead: `scope` → `field-map` → `reading-path`, as a task of type `research` |\n"
+        "Call `/puck:tutor` or `/puck:task`.\n")
+    (docs / "research").mkdir()
+    (docs / "research" / "notes.md").write_text("`a` → `b` and /puck:elsewhere\n")
+    problems = lint.lint_references(puck_home, {"scope", "field-map", "task", "researcher"})
+    assert problems == ["docs/design.md:1: `reading-path` isn't a skill or agent",
+                        "docs/design.md:2: `tutor` isn't a skill or agent"]
+
+
+def test_install_sets_hooks_path_and_uninstall_removes_only_its_own(puck_home, tmp_path, monkeypatch):
+    import subprocess
+    import adapters
+    from core.primitives import install
+    monkeypatch.setattr(install.shutil, "which", lambda name: f"/bin/{name}")
+    git = lambda *a: subprocess.run(["git", "-C", str(puck_home), *a], capture_output=True, text=True).stdout.strip()
+    claude, user = adapters.get("claude"), tmp_path / "user"
+    assert install.git_hooks(puck_home) is None  # not a repo yet
+    git("init", "-q")
+    (puck_home / ".githooks").mkdir()
+    done = install.install(claude, puck_home, user)
+    assert git("config", "--get", "core.hooksPath") == ".githooks" and "Turned on git hooks" in done[-1]
+    assert "already on" in install.install(claude, puck_home, user)[-1]
+    assert "Turned off" in install.uninstall(claude, puck_home, user)[-1]
+    assert git("config", "--get", "core.hooksPath") == ""
+    git("config", "core.hooksPath", "my-hooks")
+    assert "Left core.hooksPath as my-hooks" in install.install(claude, puck_home, user)[-1]
+    install.uninstall(claude, puck_home, user)
+    assert git("config", "--get", "core.hooksPath") == "my-hooks"  # never removes what it didn't set
+
+
+def test_install_leaves_a_global_hooks_path_alone(puck_home, tmp_path, monkeypatch):
+    import subprocess
+    import adapters
+    from core.primitives import install
+    monkeypatch.setattr(install.shutil, "which", lambda name: f"/bin/{name}")
+    config = tmp_path / "gitconfig"
+    config.write_text("[core]\n\thooksPath = /secret-scanner\n")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
+    subprocess.run(["git", "-C", str(puck_home), "init", "-q"], check=True)
+    (puck_home / ".githooks").mkdir()
+    done = install.install(adapters.get("claude"), puck_home, tmp_path / "user")
+    assert "Left core.hooksPath as /secret-scanner" in done[-1]
+    local = subprocess.run(["git", "-C", str(puck_home), "config", "--local", "--get", "core.hooksPath"],
+                           capture_output=True, text=True).stdout
+    assert local == ""
+
+
+def test_eval_format_needs_input_match(puck_home):
+    add_skill(puck_home, "evalled", template("evalled"))
+    case = paths.skills(puck_home) / "evalled" / "evals" / "triggers"
+    write_case(case, "evalled")
+    (case / "graders" / "skill-fired.md").write_text("---\ntype: tool_used\ntool: Skill\nmin: 1\nmax: 1\n---\n")
+    assert any("needs input_match" in e for e in lint.lint_all(puck_home))

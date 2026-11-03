@@ -53,6 +53,41 @@ def ensure_command(home: Path) -> str | None:
     return "Installed the puck command with uv"
 
 
+HOOKS_PATH = ".githooks"
+
+
+def _git_config(home: Path, *args: str, scope: str = "--local") -> subprocess.CompletedProcess:
+    """`scope` "" reads the effective value, which a global setting can supply."""
+    command = ["git", "-C", str(home), "config", *([scope] if scope else []), *args]
+    return subprocess.run(command, capture_output=True, text=True)
+
+
+def _is_repo_root(home: Path) -> bool:
+    top = subprocess.run(["git", "-C", str(home), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    return top.returncode == 0 and Path(top.stdout.strip()).resolve() == home.resolve()
+
+
+def git_hooks(home: Path) -> str | None:
+    """Turn on Puck's repo guards in .githooks/, unless the user points git elsewhere."""
+    if not (home / HOOKS_PATH).is_dir() or not _is_repo_root(home):
+        return None
+    current = _git_config(home, "--get", "core.hooksPath", scope="").stdout.strip()
+    if current == HOOKS_PATH:
+        return f"Git hooks already on: core.hooksPath is {HOOKS_PATH}"
+    if current:
+        return (f"Left core.hooksPath as {current}, so Puck's checks in {HOOKS_PATH}/ don't run. "
+                f"Run `git config core.hooksPath {HOOKS_PATH}` to use them.")
+    _git_config(home, "core.hooksPath", HOOKS_PATH)
+    return f"Turned on git hooks: core.hooksPath is {HOOKS_PATH} (lint before each commit, tests before each push)"
+
+
+def remove_git_hooks(home: Path) -> str | None:
+    if not _is_repo_root(home) or _git_config(home, "--get", "core.hooksPath").stdout.strip() != HOOKS_PATH:
+        return None
+    _git_config(home, "--unset", "core.hooksPath")
+    return "Turned off Puck's git hooks: unset core.hooksPath"
+
+
 def install(adapter: Adapter, home: Path, user_home: Path, commands: tuple[str, ...] = ()) -> list[str]:
     plan = _plan(adapter, home, commands)
     path = user_home / plan.settings if plan.settings else None
@@ -81,7 +116,8 @@ def install(adapter: Adapter, home: Path, user_home: Path, commands: tuple[str, 
         _write_settings(path, settings)
         done.append(f"Updated {path}: {len(plan.allow)} permission rules, "
                     f"{len(plan.directories)} directory, {len(plan.env)} environment variable")
-    return done
+    hooks = git_hooks(home)
+    return done + [hooks] if hooks else done
 
 
 def uninstall(adapter: Adapter, home: Path, user_home: Path, commands: tuple[str, ...] = ()) -> list[str]:
@@ -114,4 +150,7 @@ def uninstall(adapter: Adapter, home: Path, user_home: Path, commands: tuple[str
             del settings["env"]
         _write_settings(path, settings)
         done.append(f"Removed Puck's entries from {path}")
+    hooks = remove_git_hooks(home)
+    if hooks:
+        done.append(hooks)
     return done or ["Nothing to remove."]

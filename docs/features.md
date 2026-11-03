@@ -202,10 +202,10 @@ There are three kinds:
 | `puck install [host]` | Loads Puck in every session of the host: links the package and adds permissions to the host's user settings | — |
 | `puck uninstall [host]` | Removes what `install` added | — |
 | `puck status [--json]` | Shows Puck's state | yes |
-| `puck lint` | Checks skills, agents, hooks and context budgets | yes |
+| `puck lint [--root PATH]` | Checks skills, agents, hooks, eval files and context budgets, that `docs/features.md` has a row for every active skill, agent and hook and none for anything else, and that `/puck:<name>` and skill chains such as `scope` → `field-map` in the docs name real skills and agents. `--root` lints another copy, such as the pre-commit hook's snapshot of staged files | yes |
 | `puck build` | Lints, then generates the host packages in `dist/` | — |
 | `puck skill new <name> --description … --origin …` | Creates a draft skill from the template | — |
-| `puck skill promote <name> [--no-evals]` | Lints, runs evals, activates, rebuilds and commits one draft skill, and only that skill's folder: anything else you staged stays staged. Runs only when you say yes | — |
+| `puck skill promote <name> [--no-evals]` | Lints, runs evals, activates, rebuilds and commits one draft skill. It needs the skill's row in `docs/features.md` first, and commits that file with the skill's folder; anything else you staged stays staged. Runs only when you say yes | — |
 | `puck agent new <name> --mode worker\|lead --description …` | Creates an agent from `templates/agent.md` or `templates/agent-lead.md`. Refuses a duplicate, or a lead named like a skill | — |
 | `puck hook <id> --event … --host …` | Entry point the host calls for hooks; not for direct use | — |
 
@@ -246,6 +246,17 @@ Source references look like `openalex:W…`, `s2:…`, `arxiv:…`, `ol:OL…W` 
 Concept statuses: `unseen`, `introduced`, `practised`, `recalled-later`, `can-explain`.
 
 Optional keys from the environment: `OPENALEX_API_KEY`, `S2_API_KEY`. Without `S2_API_KEY`, Semantic Scholar often rate-limits, which shows as a warning.
+
+## Git hooks for Puck's own repository
+
+Tracked in `.githooks/`; `puck install` turns them on by setting `core.hooksPath` (and never replaces a value you set yourself), and `puck uninstall` turns them off. Unlike Puck's hooks below, they fail closed: fix what they report, never commit with `--no-verify`.
+
+| Git hook | Runs |
+|---|---|
+| pre-commit | `puck lint --root` and `ruff check src tests` (pyflakes rules only) on a snapshot of exactly the staged files, so unstaged edits can't make a commit pass or fail |
+| pre-push | `uv run pytest -q` |
+
+The lint code itself runs from the working tree; only the content comes from the snapshot.
 
 ## Hooks
 

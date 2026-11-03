@@ -10,7 +10,7 @@ from core.common.errors import PuckError
 from core.primitives import skills
 from core.tools.work import pack, scratch, tasks
 from tests.test_hooks import call
-from tests.test_build_and_lint import template, add_skill
+from tests.test_build_and_lint import template, add_skill, write_case
 
 
 def git(cwd, *args):
@@ -182,10 +182,8 @@ def test_promote_commits_only_the_skill(puck_home, monkeypatch):
     path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
     with pytest.raises(PuckError, match="needs evals/triggers"):
         skills.promote("deploy-steps", run_evals=False)
-    for case in ("triggers", "ignores-build"):
-        (path / "evals" / case / "graders").mkdir(parents=True)
-        (path / "evals" / case / "prompt.md").write_text("Deploy it.\n")
-        (path / "evals" / case / "graders" / "fired.md").write_text("---\ntype: llm\n---\nPASS.\n")
+    for case, fired in (("triggers", 1), ("ignores-build", 0)):
+        write_case(path / "evals" / case, "deploy-steps", fired)
     for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
         monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
     skills.promote("deploy-steps", run_evals=False)
@@ -252,3 +250,48 @@ def test_agent_workflow_needs_its_topic(puck_home, repo):
         tasks.start("x", "research", repo, agent="scout", topic="missing")
     with pytest.raises(tasks.TaskError, match="No lead 'nobody'"):
         tasks.start("x", "build", repo, agent="nobody")
+
+
+def test_promote_requires_and_commits_the_features_row(puck_home, monkeypatch):
+    for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
+    git(puck_home, "init", "-q", "-b", "main")
+    features = puck_home / "docs" / "features.md"
+    features.parent.mkdir()
+    features.write_text("# Features\n")
+    git(puck_home, "add", "docs/features.md")
+    git(puck_home, "commit", "-q", "-m", "x")
+    path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
+    for case, fired in (("triggers", 1), ("ignores-build", 0)):
+        write_case(path / "evals" / case, "deploy-steps", fired)
+    with pytest.raises(PuckError, match="Add a row for 'deploy-steps'"):
+        skills.promote("deploy-steps", run_evals=False)
+    assert "status: draft" in (path / "SKILL.md").read_text()
+    features.write_text("# Features\n\n| `deploy-steps` | Deploys |\n")
+    skills.promote("deploy-steps", run_evals=False)
+    shown = subprocess.run(["git", "-C", str(puck_home), "show", "--name-only", "--format="],
+                           capture_output=True, text=True, check=True).stdout
+    assert "docs/features.md" in shown and "deploy-steps/SKILL.md" in shown
+
+
+def test_promote_rolls_back_when_the_commit_is_refused(puck_home, monkeypatch):
+    for key in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"):
+        monkeypatch.setenv(key, "t@t" if "EMAIL" in key else "t")
+    git(puck_home, "init", "-q", "-b", "main")
+    git(puck_home, "commit", "-q", "--allow-empty", "-m", "x")
+    hooks = puck_home / "refuse"
+    hooks.mkdir()
+    (hooks / "pre-commit").write_text("#!/bin/sh\necho 'lint says no' >&2\nexit 1\n")
+    (hooks / "pre-commit").chmod(0o755)
+    git(puck_home, "config", "core.hooksPath", str(hooks))
+    path = skills.new("deploy-steps", "Deploy things. Use when deploying. Not for builds.", "t1")
+    for case, fired in (("triggers", 1), ("ignores-build", 0)):
+        write_case(path / "evals" / case, "deploy-steps", fired)
+    before = (path / "SKILL.md").read_text()
+    with pytest.raises(PuckError, match="(?s)commit was refused.*lint says no"):
+        skills.promote("deploy-steps", run_evals=False)
+    assert (path / "SKILL.md").read_text() == before  # draft again, version untouched
+    staged = subprocess.run(["git", "-C", str(puck_home), "diff", "--cached", "--name-only"],
+                            capture_output=True, text=True).stdout
+    assert staged == ""
+    assert not (puck_home / "dist/claude/skills/deploy-steps").exists()

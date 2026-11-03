@@ -1,0 +1,15 @@
+#!/bin/sh
+# Puck's repo guard: nothing leaves the machine with failing tests.
+# Turned on by `puck install` (core.hooksPath=.githooks). Fails closed: fix the tests, never --no-verify.
+set -u
+repo=$(git rev-parse --show-toplevel) || exit 1
+uv=$(command -v uv || true)
+[ -z "$uv" ] && [ -x "$HOME/.local/bin/uv" ] && uv="$HOME/.local/bin/uv"
+if [ -z "$uv" ]; then
+    echo "pre-push: Puck's tests need uv (https://docs.astral.sh/uv/). Install it, then push again." >&2
+    exit 1
+fi
+if ! (cd "$repo" && "$uv" run -q pytest -q); then
+    echo "pre-push: tests fail. Fix them before pushing." >&2
+    exit 1
+fi

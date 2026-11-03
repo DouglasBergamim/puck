@@ -1,0 +1,25 @@
+#!/bin/sh
+# Puck's repo guard: lint exactly what is staged, never the working tree.
+# Turned on by `puck install` (core.hooksPath=.githooks). Fails closed: fix the errors, never --no-verify.
+set -u
+repo=$(git rev-parse --show-toplevel) || exit 1
+uv=$(command -v uv || true)
+[ -z "$uv" ] && [ -x "$HOME/.local/bin/uv" ] && uv="$HOME/.local/bin/uv"
+if [ -z "$uv" ]; then
+    echo "pre-commit: Puck's checks need uv (https://docs.astral.sh/uv/). Install it, then commit again." >&2
+    exit 1
+fi
+
+snapshot=$(mktemp -d) || exit 1
+trap 'rm -rf "$snapshot"' EXIT
+git checkout-index -a --prefix="$snapshot/" || exit 1
+
+failed=0
+"$uv" run -q --project "$repo" puck lint --root "$snapshot" || failed=1
+if [ -d "$snapshot/src" ]; then
+    (cd "$snapshot" && "$uv" run -q --project "$repo" ruff check --quiet src tests) || failed=1
+fi
+if [ "$failed" -ne 0 ]; then
+    echo "pre-commit: the staged files fail Puck's checks. Fix the errors above and stage the fixes; never commit with --no-verify." >&2
+    exit 1
+fi

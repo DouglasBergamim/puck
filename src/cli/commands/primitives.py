@@ -29,7 +29,8 @@ def status(args) -> int:
 
 
 def run_lint(args=None) -> int:
-    errors = lint.lint_all()
+    root = Path(args.root).resolve() if args is not None and getattr(args, "root", None) else None
+    errors = lint.lint_all(root)
     for error in errors:
         print(error, file=sys.stderr)
     return 1 if errors else 0
@@ -84,6 +85,7 @@ def skill_command(args) -> int:
 
 def agent_command(args) -> int:
     print(agents.new(args.name, args.mode, args.description))
+    print(f"Next: add a row for '{args.name}' to docs/features.md; lint and build fail until it has one.")
     return 0
 
 
@@ -91,7 +93,9 @@ def register(commands) -> None:
     status_parser = commands.add_parser("status", help="show Puck's state")
     status_parser.add_argument("--json", action="store_true")
     status_parser.set_defaults(run=status)
-    commands.add_parser("lint", help="check skills, agents, hooks and budgets").set_defaults(run=run_lint)
+    lint_parser = commands.add_parser("lint", help="check skills, agents, hooks, budgets and docs")
+    lint_parser.add_argument("--root", help="lint this copy of Puck's home instead, such as a snapshot of staged files")
+    lint_parser.set_defaults(run=run_lint)
     commands.add_parser("build", help="lint, then generate per-host packages").set_defaults(run=run_build)
     start = commands.add_parser(
         "run", help=f"rebuild, then start the host with Puck loaded (default: {adapters.PRIMARY})",

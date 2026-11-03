@@ -76,8 +76,12 @@ def lint_skill(directory: Path, tools: set[str]) -> list[str]:
         errors.append(f"{where}: needs a 'Done when' section")
     if metadata.get("status") == "active":
         errors += [f"{where}: {problem}" for problem in eval_problems(directory)]
+    errors += [f"{where}: {problem}" for problem in eval_format(directory)]
     errors += [f"{where}: {problem}" for problem in host_specific(body, tools)]
     return errors
+
+
+GRADER_TYPES = {"tool_used", "llm", "regex", "file_exists", "baseline"}
 
 
 def eval_problems(directory: Path) -> list[str]:
@@ -92,6 +96,53 @@ def eval_problems(directory: Path) -> list[str]:
         graders = case / "graders"
         if not (case / "prompt.md").is_file() or not graders.is_dir() or not any(graders.glob("*.md")):
             problems.append(f"evals/{case.name} needs prompt.md and at least one graders/*.md")
+    return problems
+
+
+def eval_format(directory: Path) -> list[str]:
+    """Each eval file is in the shape the eval runner reads, so a bad case fails here, not at promote."""
+    problems = []
+    for prompt in sorted((directory / "evals").glob("*/prompt.md")):
+        where = f"evals/{prompt.parent.name}/prompt.md"
+        try:
+            meta, body = split_frontmatter(prompt.read_text())
+        except (ValueError, yaml.YAMLError) as error:
+            problems.append(f"{where}: {error}")
+            continue
+        turns = meta.get("max_turns")
+        if not isinstance(turns, int) or isinstance(turns, bool) or turns < 1:
+            problems.append(f"{where}: max_turns must be a positive whole number")
+        tools = meta.get("allowed_tools")
+        if tools is not None and not (isinstance(tools, list) and all(isinstance(t, str) for t in tools)):
+            problems.append(f"{where}: allowed_tools must be a list of tool names")
+        if not body.strip():
+            problems.append(f"{where}: needs the prompt text after the frontmatter")
+    for grader in sorted((directory / "evals").glob("*/graders/*.md")):
+        where = f"evals/{grader.parent.parent.name}/graders/{grader.name}"
+        try:
+            meta, body = split_frontmatter(grader.read_text())
+        except (ValueError, yaml.YAMLError) as error:
+            problems.append(f"{where}: {error}")
+            continue
+        kind = meta.get("type")
+        if kind not in GRADER_TYPES:
+            problems.append(f"{where}: type must be one of {sorted(GRADER_TYPES)}")
+        elif kind == "tool_used":
+            bounds = [meta.get("min"), meta.get("max")]
+            if not isinstance(meta.get("tool"), str) or not meta["tool"]:
+                problems.append(f"{where}: a tool_used grader names its tool")
+            if not all(isinstance(b, int) and not isinstance(b, bool) for b in bounds) or not 0 <= bounds[0] <= bounds[1]:
+                problems.append(f"{where}: min and max must be whole numbers with 0 <= min <= max")
+            pattern = meta.get("input_match")
+            if not isinstance(pattern, str) or not pattern:
+                problems.append(f"{where}: a tool_used grader needs input_match, the pattern its call must match")
+            else:
+                try:
+                    re.compile(pattern)
+                except re.error as error:
+                    problems.append(f"{where}: input_match isn't a valid pattern: {error}")
+        elif kind == "llm" and not body.strip():
+            problems.append(f"{where}: an llm grader needs its PASS and FAIL criteria in the body")
     return problems
 
 
@@ -249,4 +300,61 @@ def lint_all(root: Path | None = None) -> list[str]:
     for path in agent_paths:
         errors += lint_agent(path, set(CAPABILITIES), skills, workers, tools)
     errors += lint_hooks(paths.hook_rules(root))
+    agents = {path.stem for path in agent_paths}
+    errors += lint_features(root, skills, agents, hook_ids(paths.hook_rules(root)))
+    errors += lint_references(root, skills | agents | all_skill_names(root))
     return errors
+
+
+ROW = re.compile(r"^\| `([a-z0-9]+(?:-[a-z0-9]+)*)` \|", re.MULTILINE)
+SLASH = re.compile(r"/puck:([a-z0-9-]+)")
+CHAINED = re.compile(r"`([a-z0-9-]+)`(?=\s*→)|(?<=→)\s*`([a-z0-9-]+)`")
+
+
+def hook_ids(path: Path) -> set[str]:
+    try:
+        return {str(rule.get("id")) for rule in yaml.safe_load(path.read_text()) or [] if isinstance(rule, dict)}
+    except (OSError, yaml.YAMLError):
+        return set()  # lint_hooks reports it
+
+
+def all_skill_names(root: Path) -> set[str]:
+    return {p.name for p in paths.skills(root).iterdir() if p.is_dir()}
+
+
+def features_problems(text: str, skills: set[str], agents: set[str], hooks: set[str]) -> list[str]:
+    """docs/features.md lists every active skill, agent and hook, and nothing else."""
+    rows = set(ROW.findall(text))
+    problems = [f"docs/features.md: no row for {kind} '{name}'"
+                for kind, names in (("skill", skills), ("agent", agents), ("hook", hooks))
+                for name in sorted(names - rows)]
+    problems += [f"docs/features.md: row for '{name}', which isn't an active skill, agent or hook"
+                 for name in sorted(rows - skills - agents - hooks)]
+    return problems
+
+
+def lint_features(root: Path, skills: set[str], agents: set[str], hooks: set[str]) -> list[str]:
+    path = root / "docs" / "features.md"
+    return features_problems(path.read_text(), skills, agents, hooks) if path.exists() else []
+
+
+def reference_files(root: Path) -> list[Path]:
+    """Docs and context that name skills and agents. docs/research/ cites other projects' skills."""
+    found = [root / name for name in ("AGENTS.md", "README.md")]
+    found += sorted((root / "docs").glob("*.md"))
+    found += sorted(p for p in paths.context(root).rglob("*.md") if "knowledge" not in p.relative_to(paths.context(root)).parts)
+    return [p for p in found if p.is_file()]
+
+
+def lint_references(root: Path, known: set[str]) -> list[str]:
+    """`/puck:<name>` and backticked names next to a → must be a real skill or agent."""
+    problems = []
+    for path in reference_files(root):
+        where = path.relative_to(root).as_posix()
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            names = SLASH.findall(line)
+            if "→" in line:
+                names += [a or b for a, b in CHAINED.findall(line)]
+            problems += [f"{where}:{number}: `{name}` isn't a skill or agent"
+                         for name in dict.fromkeys(names) if name not in known]
+    return problems

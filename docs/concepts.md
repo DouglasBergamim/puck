@@ -25,7 +25,7 @@ flowchart LR
 |---|---|---|---|---|
 | **Instruction** | A short rule true in nearly every session, loaded always | `context/instructions/global.md` | You, by hand | A skill, which loads only when needed |
 | **Profile** | Hand-written facts about you that an agent would get wrong without them, such as `friction` | `context/profile.md` | You | Knowledge, which is study material |
-| **Hook** | Something that must happen every time, whatever the model decides. Its logic is a `puck hook` command, and it fails open | `context/hooks.yaml`, `src/core/hooks.py` | A code change | An instruction, which the model can ignore |
+| **Hook** | Something that must happen every time, whatever the model decides. Its logic is a `puck hook` command, and it fails open. The git hooks in `.githooks/` are different: repo guards for Puck's own commits and pushes, which fail closed | `context/hooks.yaml`, `src/core/hooks.py` | A code change | An instruction, which the model can ignore |
 | **Command** | Anything a program can compute exactly | `puck …`, in `src/cli/commands/` | A code change | A skill, which carries judgement |
 | **Skill** | A repeatable procedure the model loads when needed and runs in your conversation. Its status is `draft`, `active` or `retired`, and only active skills are built. Its invocation is `model` or `user` | `context/skills/<name>/`: `SKILL.md`, `references/`, `evals/` | The constructor, or the retro as a draft | A lead, which holds a role across many skills |
 | **Agent** | A definition in `context/agents/`, of one of two modes: lead or worker | `context/agents/<name>.md` | The constructor, via `puck agent new` | — |
@@ -157,6 +157,8 @@ Checklist:
 - Lead: the sections, a non-empty `workflow`, unique stage ids, text in each stage's `delivers`, `skill` and `check`, each stage's `skill` declared in `skills`, a bold entry for each stage in the Workflow prose (`**Scope.**` for `scope`), and no name clash with any skill, drafts included.
 - Worker: the sections, no `ask`, no `workflow`, `status:` in Return.
 - Both: known capabilities, only active skills and real workers referenced (drafts aren't built), and no host tool names or variables.
+- Skill evals: each `prompt.md` has a positive `max_turns` and a prompt; each grader has a known `type`, and a `tool_used` grader a tool, `0 <= min <= max` and a valid `input_match`.
+- Docs: `docs/features.md` has a row for every active skill, agent and hook and none for anything else, and `/puck:<name>` and backticked names next to a `→` in the docs name real skills or agents.
 
 ## Defining a skill
 
